@@ -1,6 +1,25 @@
 //@version=5
 indicator('Buy Bot Volume Indicator', max_bars_back = 5000,max_boxes_count=200, overlay = false)
 
+
+ //Buy Bot Volume Indicator
+ //Copyright (C) 2025 MrM - Manuel
+ 
+// Questo programma è software libero: puoi ridistribuirlo e/o modificarlo
+// secondo i termini della GNU General Public License come pubblicata dalla
+ //Free Software Foundation, sia la versione 3 della Licenza, sia
+ //(a tua scelta) una versione successiva.
+ 
+ //Questo programma è distribuito nella speranza che sia utile,
+ //ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita di
+ //COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedi la
+ //GNU General Public License per maggiori dettagli.
+ 
+ //Dovresti aver ricevuto una copia della GNU General Public License
+ //insieme a questo programma. In caso contrario, vedi <https://www.gnu.org/licenses/>.
+ 
+ //Contatto: manuelmarmaglio@gmail.com (oggetto: TRADING)
+ 
 ///////////         BBars DEVE AVERE UN NUMERO PARI !!!!!
 
 // Starter Pack
