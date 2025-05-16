@@ -1926,7 +1926,7 @@ if run > 0
          (na(break_start_perc) or (not na(break_start_perc) and poc_perc[1]   < (break_start_perc - (min_level[1] / 2))))
 
         figura_val_to_bot_target = (val_perc <= fib_perc_5 and val_perc <= (lower_lr_perc) and val_perc > (bot_liq_perc)
-         and val_is_in_buy and not figura_poc_to_bot_target) and
+         and val_is_in_buy and not figura_poc_to_bot_target) and not figura_poc_to_bot_target and not figura_vah_to_bot_target and 
          (na(break_start_perc) or (not na(break_start_perc) and val_perc[1]   < (break_start_perc - (min_level[1] / 2))))
 
         figura_poc_2_to_bot_target = ((poc_2_perc <= fib_perc_5 and poc_2_perc <= (lower_lr_perc) and poc_2_perc > (bot_liq_perc)
