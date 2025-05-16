@@ -2439,7 +2439,7 @@ if barstate.islast and run > 0
              high > upperEndPrice_lr[1]) 
              and stable_box)) and open_position_mid > 0
 
-    chiusura_scenario_under_lower_lr = ((open_position_break > 0 or real_pearson[1] < 0.75) and stable_box) ? mid_lower_target_bot_trig : mid_higher_target_bot_trig
+    chiusura_scenario_under_lower_lr = ((open_position_break > 0 or pearsonR_lr[1] < 0.75) and stable_box) ? mid_lower_target_bot_trig : mid_higher_target_bot_trig
 
 
     actual_support_over_bot_target_trig_lower = 
