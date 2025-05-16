@@ -1,25 +1,24 @@
 //@version=5
 indicator('Buy Bot Volume Indicator', max_bars_back = 5000,max_boxes_count=200, overlay = false)
 
-
- //Buy Bot Volume Indicator
- //Copyright (C) 2025 MrM - Manuel
+//Buy Bot Volume Indicator
+//Copyright (C) 2025 MrM - Manuel
  
 // Questo programma è software libero: puoi ridistribuirlo e/o modificarlo
 // secondo i termini della GNU General Public License come pubblicata dalla
- //Free Software Foundation, sia la versione 3 della Licenza, sia
- //(a tua scelta) una versione successiva.
+//Free Software Foundation, sia la versione 3 della Licenza, sia
+//(a tua scelta) una versione successiva.
  
- //Questo programma è distribuito nella speranza che sia utile,
- //ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita di
- //COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedi la
- //GNU General Public License per maggiori dettagli.
+//Questo programma è distribuito nella speranza che sia utile,
+//ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita di
+//COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedi la
+//GNU General Public License per maggiori dettagli.
  
- //Dovresti aver ricevuto una copia della GNU General Public License
- //insieme a questo programma. In caso contrario, vedi <https://www.gnu.org/licenses/>.
+//Dovresti aver ricevuto una copia della GNU General Public License
+//insieme a questo programma. In caso contrario, vedi <https://www.gnu.org/licenses/>.
  
- //Contatto: manuelmarmaglio@gmail.com (oggetto: TRADING)
- 
+//Contatto: manuelmarmaglio@gmail.com (oggetto: TRADING)
+
 ///////////         BBars DEVE AVERE UN NUMERO PARI !!!!!
 
 // Starter Pack
@@ -32,45 +31,25 @@ var bool show_plot = true
 //Numero di barra da prendere in esame nello studio iniziale del grafico 
 bbars                   = input.int(title='Number of Bars - inserire un numero pari', defval=400, minval=1)
 var int original_bbars  = bbars
-//indica la % di volume da pesare per scegliere vah e val, è da sistemare ed adattare, idee - altre percentuali di volume - atro + trend
-//Al momento il volume di gioco attuale configura anche le distanze da prendere in considerazione per le posizioni cover
-//L'alternativa potrebbe essere un ulteriore incremento sull'atr oppure usare il volume totale di gioco attuale e non solo quello chiuso tra vah e val 
+//indica la % di volume da pesare per scegliere vah e val, questa % verrà riadattata automaticamente e sarà fittizia in quanto il codice tenderà a forzare l'ampiezza in base ai livelli di ratio
 var percent             = input.float(title='% pesata di volume', defval=65, minval=1, maxval = 100) 
 int bbars_2             = bbars / 2
 var int bar_limit       = 1500 //Il numero delle barre oltre il quale l'indicatore si estenderà senza continuare lo studio (massimo di computazione possibile)
+//Se utilizzato come alert e non per la visualizzazione la sua potenza computazionale dovrebbe reggere fino a 4999 barre
 var bool ancoraggio_pivot = true //Questa bool serve per ancorare la bbars al pivot quando run == 1 
-
 var bool auto_pivot_vol               = true // Attivando questa bool le posizioni cover si adattano al volume di gioco attuale, disattivandolo il valore standard sarà considerato come valore costante
-var bool fast_play                    = true //Attivare questa bool per usare il primo pivot sotto quello attuale a prescindere dalla sua distanza dal pivot corrente
+var bool fast_play                    = true //Attivare questa bool per usare il primo pivot sotto quello attuale a prescindere dalla sua distanza dal pivot corrente (Se ne consiglia l'attivazione per non allontanara il pivot reale nella gestione delle posizioni bot)
 //Var generali 
 var bool block_start_bar          = false 
-var bool up_breakout              = false
-var bool down_breakout            = false 
+var bool up_breakout              = false // Necessita revisione in fase di start, al momento non tengo conto qual è il reale pivot attivo nella gestione dell'ancoraggio, questo causa errori di calcolo non fondamentali ma comunque fastidiosi
+var bool down_breakout            = false // Necessita revisione in fase di start, al momento non tengo conto qual è il reale pivot attivo nella gestione dell'ancoraggio, questo causa errori di calcolo non fondamentali ma comunque fastidiosi 
 var float distanza_break_out_down = na 
 var float top_in_down_break_out   = na 
-var bool fast_cover_setting = true 
+var bool fast_cover_setting = true // Gestione posizioni di cover su tutte le inefficienze di mercato, disattivandolo si cercano inefficienze più profonde
+var float incremento_distanza_pivot = 1.5   //Variabile per incrementare la distanza delle posizioni cover, una sua revisione in base al timeframe o al vix potrebbe essere opportuna
+var float incremento_resistenze_pivot = 1.5 //Variabile per incrementare la distanza delle posizioni cover, una sua revisione in base al timeframe o al vix potrebbe essere opportuna
 var float run     = 0
-var int contatore = 0 
-var a_sup         = array.new_float(0)
-
-var float actual_supporto    = na 
-var float actual_resistenza  = na 
-var int   support_switch_bar = na 
-var int   res_switch_bar = na 
-
-var float bot                   = na
-var float top                   = na
-var float distanza_break_out_up = na 
-var float bot_in_up_break_out   = na 
-
-//Salvo le liquidità in modo da mantenerle stabili quando le bbars superano il bar limit
-var float bot_liq  = na 
-var float top_liq  = na 
-var float save_bot_liq  = na 
-var float save_top_liq  = na 
-
-var bool pivot_is_broken = false //check iniziale del pivot per verificare che non sia stato sfondato 
-
+var int contatore = 0 //Gestisce il numero di barre da aggiungere a bbars
 var color headerColor = color.new(color.gray, 20)
 var color positiveColor = color.new(color.green, 60)
 var color negativeColor = color.new(color.red, 60)
@@ -78,12 +57,11 @@ var color vah_color = na
 var color val_color = na 
 var int tot_position = 0 
 var int tot_position_cover = 0 
-var bool bot_liq_modified = false
-var bool top_liq_modified = false
+var bool bot_liq_modified = false //Questo blocco trova le inefficienze di apertura di mercato e comprime le relative liquidità di zona
+var bool top_liq_modified = false //Questo blocco trova le inefficienze di apertura di mercato e comprime le relative liquidità di zona
 var string current_timeframe = timeframe.period
-var float min_0_3 = close / 100 * 0.3 
-
-
+var float min_0_3 = close / 100 * 0.2 // Minimo sindacale per la distanza delle posizioni cover, aumentandolo aumenta la distanza delle posizioni cover
+//
 
 // ----------------------------------------}
 
@@ -99,102 +77,103 @@ if na(titolo)
     //Indici o driver tradabili 
     if titolo == "US30" 
         spread := 2 
-        n_titoli := na
+        n_titoli := 0.01
     if titolo == "TECDAX" 
         spread := 11 
-        n_titoli := na
+        n_titoli := 0.04
     if titolo == "US100" 
         spread := 1.8 
-        n_titoli := na 
+        n_titoli := 0.01 
     if titolo == "GOLD" 
         spread := 0.1
-        n_titoli := na 
+        n_titoli := 0.1 
     if titolo == "DE40" 
         spread := 1.5 
-        n_titoli := na 
+        n_titoli := 0.02
     if titolo == "NYFANG" 
         spread := 4 
-        n_titoli := na
+        n_titoli := 0.01
     if titolo == "US500" 
-        spread := 0.04 
-        n_titoli := na
+        spread := 0.02
+        n_titoli := 0.04
     if titolo == "BTCUSD" 
         spread := 50 
-        n_titoli := na
+        n_titoli := 0.00015
     if titolo == "EURUSD" 
         spread := 0.00006 
-        n_titoli := na
+        n_titoli := 200
     if titolo == "OIL_CRUDE" 
         spread := 0.03 
-        n_titoli := na
+        n_titoli := 1.5
     if titolo == "RTY" 
         spread := 0.5 
-        n_titoli := na
+        n_titoli := 0.05
     if titolo == "HK50" 
         spread := 30 
-        n_titoli := na
+        n_titoli := 0.03
     if titolo == "FR40" 
         spread := 0.8 
-        n_titoli := na
+        n_titoli := 0.02
     if titolo == "IT40" 
         spread := 18 
-        n_titoli := na
+        n_titoli := 0.002
     //Stock Us 
     if titolo == "UNH" 
         spread := 0.3 
-        n_titoli := na 
+        n_titoli := 0.2 
     if titolo == "MSFT" 
         spread := 1.1 
-        n_titoli := na
+        n_titoli := 0.2
     if titolo == "GOOG" 
         spread := 0.22 
-        n_titoli := na
+        n_titoli := 0.6
     if titolo == "TSLA" 
         spread := 0.37 
-        n_titoli := na
+        n_titoli := 0.1
     if titolo == "NVDA" 
         spread := 0.11 
-        n_titoli := na
+        n_titoli := 0.6
     if titolo == "AMZN" 
         spread := 0.17 
-        n_titoli := na
+        n_titoli := 0.4
     if titolo == "META" 
         spread := 1.6 
-        n_titoli := na
+        n_titoli := 0.1
     if titolo == "AAPL" 
         spread := 0.27 
-        n_titoli := na
+        n_titoli := 0.4
     if titolo == "PEP" 
         spread := 0.18 
-        n_titoli := na
+        n_titoli := 0.4
     if titolo == "NFLX" 
         spread := 1.98 
-        n_titoli := na
+        n_titoli := 0.04
     if titolo == "C" 
         spread := 0.7
-        n_titoli := na
+        n_titoli := 1
+
     //Stock Eu 
     if titolo == "KER" 
         spread := 0.4 
-        n_titoli := na
+        n_titoli := 0.4
     if titolo == "LDO" 
         spread := 0.25 
-        n_titoli := na
+        n_titoli := 0.5
     if titolo == "RACEM" 
         spread := 1.04
-        n_titoli := na
+        n_titoli := 0.2
     if titolo == "CPR" 
         spread := 0.025 
-        n_titoli := na
+        n_titoli := 10
     if titolo == "RHM" 
         spread := 4
-        n_titoli := na
+        n_titoli := 0.05
     if titolo == "NEXI" 
         spread := 0.10
-        n_titoli := na
+        n_titoli := 10
     if titolo == "ASML" 
         spread := 1.5
-        n_titoli := na
+        n_titoli := 0.1
     //
 
 // Percentili VIX predefiniti
@@ -221,31 +200,35 @@ status = vix >= p98 ? "PANICO" :
          "COMPIACENZA"
 //
 
+//Questa sezione gestisce la distanza percentuale dei livelli di target rispetto ai livelli che vengono triggerati, necessitano una riformattazione più precisa
 var int min_level = na
 var int mid_level = na
-var float incremento_distanza_pivot = 1.5 //Variabile per incrementare la distanza delle posizioni in termini di "deviazione standard"
-var float incremento_resistenze_pivot = 1.5
-
+var int sentiment_level = 0 
 if status == "PANICO" or status == "CRITICO"
-    min_level := 27
-    mid_level := 45
+    min_level := 25
+    mid_level := 35
     incremento_distanza_pivot := 1.4
+    sentiment_level := 0
 if status == "ALTO" 
-    min_level := 33
-    mid_level := 49
+    min_level := 28
+    mid_level := 38
     incremento_distanza_pivot := 1.3
+    sentiment_level := 1
 if status == "ELEVATO" 
-    min_level := 37
-    mid_level := 52
+    min_level := 30
+    mid_level := 40
     incremento_distanza_pivot := 1.2
+    sentiment_level := 2
 if status == "NORMALE" 
-    min_level := 40
-    mid_level := 60
+    min_level := 35
+    mid_level := 50
     incremento_distanza_pivot := 1.1
+    sentiment_level := 3
 if status == "MOLTO BASSO" or status == "BASSO"
-    min_level := 45
-    mid_level := 70
+    min_level := 40
+    mid_level := 55
     incremento_distanza_pivot :=  1
+    sentiment_level := 4
 //
 
 // Colore basato sullo stato
@@ -271,6 +254,28 @@ if barstate.isconfirmed and show_plot
 // Strutture di base
 // -----------------------------------------------------------{
 
+var a_sup         = array.new_float(0)
+var float actual_supporto    = na 
+var float actual_resistenza  = na 
+var int   support_switch_bar = na 
+var int   res_switch_bar = na 
+var float bot                   = na
+var float top                   = na
+var float distanza_break_out_up = na 
+var float bot_in_up_break_out   = na 
+var float bot_liq  = na //Liquidità base ancorata a pivot 1,1
+var float top_liq  = na //Liquidità base ancorata a pivot 1,1
+var float save_bot_liq  = na //Salvo le liquidità in modo da mantenerle stabili quando le bbars superano il bar limit
+var float save_top_liq  = na //Salvo le liquidità in modo da mantenerle stabili quando le bbars superano il bar limit
+
+var float actual_old_supporto = na 
+var float actual_old_resistenza = na 
+var int support_switch_bar_old = na 
+var int res_switch_bar_old = na 
+var bool  bot_is_sup = false //Definisce se i pivot corrispondono al livello bot
+var bool  top_is_res = false //Definisce se i pivot corrispondono al livello top
+
+//Vengono confrontati diversi livelli di pivot, il pivot old e quello normale servono per i margini di gioco, quelli fast per il sistema ad inefficienza rapida per le posizioni cover (rappresenza un rischio a timeframe bassi quando la volatilità implicita è elevata e vengono infinte usati dei sistemi di pivot 1,1 per controllare la liquidità interna (pivot basso per top e alto per bot))
 //Gestione supporti e resistenze 
 supporto   = bar_index > 1000 ? ta.pivotlow  (low,  bbars_2, bbars_2)   : na 
 resistenza = bar_index > 1000 ? ta.pivothigh (high, bbars_2, bbars_2)   : na 
@@ -321,12 +326,6 @@ resistenza_old = bar_index > 100 ? ta.pivothigh (high, original_bbars_old, origi
 
 switch_supporto_old   = not na(supporto_old)
 switch_resistenza_old = not na(resistenza_old)
-var float actual_old_supporto = na 
-var float actual_old_resistenza = na 
-var int support_switch_bar_old = na 
-var int res_switch_bar_old = na 
-var bool  bot_is_sup = false 
-var bool  top_is_res = false 
 
 if switch_supporto_old    
     actual_old_supporto := supporto_old 
@@ -338,7 +337,7 @@ if switch_resistenza_old
     res_switch_bar_old      := bar_index - original_bbars_old - 1 // Indica il punto in cui il low corrisponde all'actual supporto 
 //
 
-// Opzione 2: Salva la dimensione e itera all'indietro
+// Elimino i pivot non vergini dall'array, iterando sia supporti che resistenze nello stesso array vengono prese le inefficienze di apertura di mercato come posizione cover.
 int size = array.size(a_sup)
 for i = 0 to size - 1
     int j = size - 1 - i
@@ -392,80 +391,82 @@ if barstate.islastconfirmedhistory
 var float bot_mom = na 
 var float top_mom = na 
 var bool bar_reach = false 
-
 var int contatore_try = na 
-if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and ancoraggio_pivot and ((bar_index - support_switch_bar - 1)) < bar_limit and ((bar_index - support_switch_bar - original_bbars)) > 0 and actual_supporto <= bot
-    contatore_try := bar_index - original_bbars - support_switch_bar
-    top_mom := 0
-    bot_mom := 9999999 
-    for i = 1 to (bbars + contatore_try) 
-        if high[i] > top_mom
-            top_mom := high[i]
-        if low[i] < bot_mom 
-            bot_mom := low[i] 
-    actual_media_vol := top_mom - bot_mom
-    if actual_media_vol > media_vol 
-        contatore := bar_index - original_bbars - support_switch_bar
-        block_start_bar := true 
-        bot_block_fast := true
+
+if tot_position[1] == 0
+    //Questo è lo start del codice oltre che lo switch di pivot, tendenzilmente vengono cercati prima i supporti chiave e poi eventuali resistenze che indicano cadute, questa scelta è stata operata per attendere un certo numero di candele prima di switchare il pivot evitando di perdere i volumi della caduta precedente.
+    if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and ancoraggio_pivot and ((bar_index - support_switch_bar - 1)) < bar_limit and ((bar_index - support_switch_bar - original_bbars)) > 0 and actual_supporto <= bot
+        contatore_try := bar_index - original_bbars - support_switch_bar
+        top_mom := 0
+        bot_mom := 9999999 
+        for i = 1 to (bbars + contatore_try) //Eseguo un mini test rapido ad ogni switch per assisurarmi di non avere schiacciamenti di volume, lo switch a livello grafico causa spesso crash del codice, tuttavia a livello di alert funzona anche a 1s perchè vengono eliminati automaticamente i sistemi di plottaggio del codice (non serve mettere showplot false per farlo funzionare)
+            if high[i] > top_mom
+                top_mom := high[i]
+            if low[i] < bot_mom 
+                bot_mom := low[i] 
+        actual_media_vol := top_mom - bot_mom
+        if actual_media_vol > media_vol 
+            contatore := bar_index - original_bbars - support_switch_bar
+            block_start_bar := true 
+            bot_block_fast := true
+        //
     //
-//
-if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and not bot_block_fast and ancoraggio_pivot and ((bar_index - res_switch_bar - 1)) < bar_limit and ((bar_index - res_switch_bar - original_bbars)) > 0 and not bot_block
-    contatore_try := bar_index - original_bbars - res_switch_bar
-    top_mom := 0
-    bot_mom := 9999999 
-    for i = 1 to (bbars + contatore_try) 
-        if high[i] > top_mom
-            top_mom := high[i]
-        if low[i] < bot_mom 
-            bot_mom := low[i] 
-    actual_media_vol := top_mom - bot_mom
-    if actual_media_vol > media_vol 
-        contatore := bar_index - original_bbars - res_switch_bar
-        block_start_bar := true 
-        top_block_fast := true 
+    if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and not bot_block_fast and ancoraggio_pivot and ((bar_index - res_switch_bar - 1)) < bar_limit and ((bar_index - res_switch_bar - original_bbars)) > 0 and not bot_block
+        contatore_try := bar_index - original_bbars - res_switch_bar
+        top_mom := 0
+        bot_mom := 9999999 
+        for i = 1 to (bbars + contatore_try) 
+            if high[i] > top_mom
+                top_mom := high[i]
+            if low[i] < bot_mom 
+                bot_mom := low[i] 
+        actual_media_vol := top_mom - bot_mom
+        if actual_media_vol > media_vol 
+            contatore := bar_index - original_bbars - res_switch_bar
+            block_start_bar := true 
+            top_block_fast := true 
 
-//
-if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and not top_block_fast and ancoraggio_pivot and ((bar_index - support_switch_bar_old - 1)) < bar_limit and ((bar_index - support_switch_bar_old - original_bbars)) > 0 
-    contatore_try := bar_index - original_bbars - support_switch_bar_old
-    top_mom := 0
-    bot_mom := 9999999 
-    for i = 1 to (bbars + contatore_try)
-        if high[i] > top_mom
-            top_mom := high[i]
-        if low[i] < bot_mom 
-            bot_mom := low[i] 
-    actual_media_vol := top_mom - bot_mom
-    if actual_media_vol > media_vol 
-        contatore := bar_index - original_bbars - support_switch_bar_old
-        block_start_bar := true 
-        bot_block := true
-        bot_block_fast := false 
     //
+    if ((run == 0 and barstate.islastconfirmedhistory) or bar_reach[1]) and not top_block_fast and ancoraggio_pivot and ((bar_index - support_switch_bar_old - 1)) < bar_limit and ((bar_index - support_switch_bar_old - original_bbars)) > 0 
+        contatore_try := bar_index - original_bbars - support_switch_bar_old
+        top_mom := 0
+        bot_mom := 9999999 
+        for i = 1 to (bbars + contatore_try)
+            if high[i] > top_mom
+                top_mom := high[i]
+            if low[i] < bot_mom 
+                bot_mom := low[i] 
+        actual_media_vol := top_mom - bot_mom
+        if actual_media_vol > media_vol 
+            contatore := bar_index - original_bbars - support_switch_bar_old
+            block_start_bar := true 
+            bot_block := true
+            bot_block_fast := false 
+        //
 
 
-if ((run == 0 and barstate.islastconfirmedhistory or bar_reach[1])) and not bot_block and ancoraggio_pivot and ((bar_index - res_switch_bar_old - 1)) < bar_limit and ((bar_index - res_switch_bar_old - original_bbars)) > 0 
-    contatore_try := bar_index - original_bbars - res_switch_bar_old
-    block_start_bar := true 
-    top_block := true
-    top_mom := 0
-    bot_mom := 9999999 
-    for i = 1 to (bbars + contatore_try) 
-        if high[i] > top_mom
-            top_mom := high[i]
-        if low[i] < bot_mom 
-            bot_mom := low[i] 
-    actual_media_vol := top_mom - bot_mom
-    if actual_media_vol > media_vol 
-        contatore := bar_index - original_bbars - res_switch_bar_old
+    if ((run == 0 and barstate.islastconfirmedhistory or bar_reach[1])) and not bot_block and ancoraggio_pivot and ((bar_index - res_switch_bar_old - 1)) < bar_limit and ((bar_index - res_switch_bar_old - original_bbars)) > 0 
+        contatore_try := bar_index - original_bbars - res_switch_bar_old
         block_start_bar := true 
         top_block := true
-        top_block_fast := false 
-//
+        top_mom := 0
+        bot_mom := 9999999 
+        for i = 1 to (bbars + contatore_try) 
+            if high[i] > top_mom
+                top_mom := high[i]
+            if low[i] < bot_mom 
+                bot_mom := low[i] 
+        actual_media_vol := top_mom - bot_mom
+        if actual_media_vol > media_vol 
+            contatore := bar_index - original_bbars - res_switch_bar_old
+            block_start_bar := true 
+            top_block := true
+            top_block_fast := false 
+    //
 
 if block_start_bar
     bbars := bbars + contatore
-    if run == 0 or (bbars < bbars[1])
+    if run == 0 or (bbars < bbars[1]) //Ho dovuto calcolare manualmente top e bot durante lo switch, la funzione ta.pivot continuava a creare problemi utilizzando una lenght mobile
         top := 0
         bot := 9999999 
         for i = 1 to bbars 
@@ -480,7 +481,7 @@ if block_start_bar
 
 bar_reach := bbars == bar_limit
 
-if bar_reach
+if bar_reach //Azzero le bool di ricerca prima dello switch
     bot_block      := false
     top_block      := false
     bot_block_fast := false
@@ -533,6 +534,7 @@ var float old_res_3 = na
 var int tot_sup     = na 
 var int tot_res     = na 
 
+//Iterazione scalare per il sistema cover
 if barstate.islastconfirmedhistory and array.size(a_sup) > 0
     tot_sup := 0 
     
@@ -632,7 +634,7 @@ if barstate.islastconfirmedhistory and array.size(a_sup) > 0
     //
 // ----------------------------------------}
 
-//Gestione ancoraggi e settaggio supporti e resistenze
+//Gestione corrispondenze pivot - bot/top
 // -----------------------------------------------------------{
 
 // Tabella per assegnazioni strategie 
@@ -648,7 +650,7 @@ bot_is_sup_over    = not bot_is_sup and bot_is_sup[1]
 top_is_res_over    = not top_is_res and top_is_res[1]
 
 if bot_is_sup and actual_supporto > bot
-    actual_support_over_bot_perc := math.round(((actual_supporto - bot) / (top - bot)) * 100)
+    actual_support_over_bot_perc := math.round(((actual_supporto - bot) / (top - bot)) * 100) 
 //
 if not bot_is_sup
     actual_support_over_bot_perc := 0
@@ -664,11 +666,11 @@ if not bot_is_sup
 // Dichiarazioni Volume indicator + dichiarazioni liq
 // -----------------------------------------------------------{
 
-var int cnum = current_timeframe == "1S" ? 50 : 100 // in quante righe suddividere i volumi interni di gioco
-global_distance = top - bot 
+var int cnum = current_timeframe == "1S" ? 50 : 100 // in quante righe suddividere le barre del volume profile
+
+global_distance = top - bot //Calcolo la distanza globale per preparare un banale sistema di proporzioni e trasformare in percentuale i dati, questo aiuta a triggerare più facilmente i valori che si avvicinano al target predefinito
 step = global_distance / cnum
 
-//percent := percent //aggiungere in cremento % volume per cambiare lo studio 
 var int poc_width = 1
 var int vah_width = 1
 var int val_width = 1
@@ -760,12 +762,12 @@ var float break_out_up_perc_mom = na
 var float break_out_down_perc_mom = na 
 var float vol_distance_perc = na 
  
-var int vah_perc     = na
-var int poc_perc     = na
-var int poc_2_perc   = na
-var int val_perc     = na
-var int bot_liq_perc = na
-var int top_liq_perc = na
+var int vah_perc     = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
+var int poc_perc     = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
+var int poc_2_perc   = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
+var int val_perc     = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
+var int bot_liq_perc = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
+var int top_liq_perc = na //Le perc servono per iterare più facilmente i trig perchè utilizzando l'arrotondamento riesco a recuperare valoci vicini alle linee di trig
 
 float[] totalvols = array.new_float(cnum, 0.)
 var float vol_value = na 
@@ -779,6 +781,7 @@ var int low_perc = na
 var int high_perc = na 
 var float poc_second_level = na
 var color poc_2_color = na 
+
 // Draw lines
 var line poc_line           = na
 var line poc_2_line         = na
@@ -817,7 +820,7 @@ get_vol(y11, y12, y21, y22, height, vol) =>
 var float vah_to_poc_vol_ratio = na
 var float poc_2_to_poc_vol_ratio = na
 var float val_to_poc_vol_ratio = na
- 
+//L'indicare volume profile seguente è particolare in quanto raddoppia il peso delle spike rispetto al peso dei corpi in modo da avvicinarsi il più possibile al corretto livello di poc
 if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmedhistory)
     if run < 2 
         if run == 1
@@ -868,7 +871,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
             down -= 1
             down
     //
-    // Dopo aver calcolato up e down ma prima di calcolare i livelli finali
+    // Sposto le liquiditù sulle assenze di volume per non perdere le inefficienze di apertura di mercato
 
     float new_bot_liq = bot_liq
     
@@ -914,7 +917,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     if top_liq_modified
         top_liq := new_top_liq
 
-    // Ottimizzazione migliorata del livello VAH - SOLO VERSO L'ALTO
+    // Ottimizzazione migliorata del livello VAH - SOLO VERSO L'ALTO ricerco livelli con ratio maggiore a quello attuale 
     int original_up = up
     bool vah_moved = false
 
@@ -940,7 +943,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     // Aggiorna il valore di up con il livello di massimo volume trovato
     up := max_vol_level
 
-    // Ottimizzazione migliorata del livello VAL - SOLO VERSO IL BASSO
+    // Ottimizzazione migliorata del livello VAL - SOLO VERSO IL BASSO ricerco livelli con ratio maggiore a quello attuale 
     int original_down = down
     bool val_moved = false
 
@@ -1117,7 +1120,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     piv_distance_2 := piv_distance_1 * incremento_distanza_pivot
     piv_distance_3 := piv_distance_2 * incremento_distanza_pivot
 
-
+    //Gestione del sistema cover dopo l'iterazione run == 0 che definisce i punti di start, potrebbe essere spostato sopra questo blocco, al momento si trova qua perchè le posizioni cover erano precedentemente ancorate alla distanza VAL VAH che però portava a delle sovracompressioni in timeframe brevi, in realtà a timeframe alti era in grado di velocizzare la gestione a timeframe alti e non scarterei a priori questa opzione.
     if run > 0 and bot != bot[1] and array.size(a_sup) > 0
         tot_sup := 0 
         //
@@ -1176,19 +1179,17 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
         
         // Trova la prima resistenza >= actual_resistenza
         for i = 0 to array.size(a_sup) - 1
-            if fast_play and top_is_res
-                if array.get(a_sup, i) > top + piv_distance 
+            if fast_play 
+                if array.get(a_sup, i) > top + piv_distance and block_start_bar
                     old_res := array.get(a_sup, i)
                     if not na(old_res)
                         tot_res += 1 
                     break
-            if fast_play and not top_is_res
-                if array.get(a_sup, i) > top
+                if array.get(a_sup, i) > top and not block_start_bar
                     old_res := array.get(a_sup, i)
                     if not na(old_res)
-                        tot_res += 1 
+                        tot_res += 1
                     break
-        //
         for i = 0 to array.size(a_sup) - 1
             if not fast_play 
                 if array.get(a_sup, i) > actual_resistenza + piv_distance 
@@ -1221,7 +1222,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     //
 
 // -------------------------------------}
-
+    //Sistema generale di plot 
     if run > 1 and not show_plot
         line.delete(poc_line)
         line.delete(poc_2_line)
@@ -1241,9 +1242,7 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
         line.delete(sup_line_2)
         line.delete(res_line_3)
         line.delete(sup_line_3)
-
-
-
+    //
     if show_plot or run == 0 or run == 1 
 
         line.delete(poc_line)
@@ -1343,19 +1342,19 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
 // Calcolo Percentuali di Distanza e Break Out
 // -----------------------------------------------------------{
 
-// Inizializzazione dei breakout alla prima esecuzione
+// Inizializzazione dei breakout alla prima esecuzione, deve essere aggiustato, in questo momento rileva falsi break quando l'ancoraggio è avvenuto su supporto old o resistenza old 
 if barstate.islastconfirmedhistory 
-    if top > actual_resistenza and low > poc_level
-        old_top := actual_resistenza
+    if top > resistenza_old and low > poc_level
+        old_top := resistenza_old
         up_breakout := true 
         bot_in_up_break_out := bot
-        distanza_break_out_up := actual_resistenza - bot_in_up_break_out
+        distanza_break_out_up := resistenza_old - bot_in_up_break_out
     //
-    if bot < actual_supporto and high < poc_level
-        old_bot := actual_supporto 
+    if bot < supporto_old and high < poc_level
+        old_bot := supporto_old 
         down_breakout := true 
         top_in_down_break_out := top
-        distanza_break_out_down := top_in_down_break_out - actual_supporto
+        distanza_break_out_down := top_in_down_break_out - supporto_old
 //
 
 var float distanza_break_out_up_post = na 
@@ -1477,6 +1476,7 @@ if run > 0
 // LR
 // -----------------------------------------------------------{
 
+//Utilizzo una lr per la gestione del trend, al momento risulta poco utilizzato rispetto alle sue reali potenzialità, il pearson è uno strumento fondamentale per la dinamizzazione dei flussi verso i rispettivi target
 var float lr_vol_perc = na 
 
 lengthInput_lr = bbars
@@ -1641,6 +1641,7 @@ m = (endPrice_lr - startPrice_lr) / (bar_index - (bar_index - lengthInput_lr + 1
 // Setting Finonacci
 // -----------------------------------------------------------{
 
+//Tutto lo scenario bot top viene suddiciso in una sequenza di fibonacci per gestire livelli minimi di acquisto ed eventuali incrementi o diminuzioni della % di volume pesata. questo per mantenere stabilità nel codice ed evitare iper compressioni o iper estensioni
 //Gestione dello scenario box 
 var float fib_val_value = na 
 var float fib_vah_value = na 
@@ -1680,20 +1681,21 @@ new_fib_perc_5 = math.round(((fib_perc_5 - bot_liq) / bot_liq_distance) * 100)
 // Ema per identificare la zona di prezzo
 // -----------------------------------------------------------{
 
+//Utilizzo una ema per validare i livelli in questione ed evitare trig di livelli sgraditi durante eventuali salti grafici
 var float ema_switch_perc = na 
-var bool val_is_in_buy = false 
-var bool vah_is_in_buy = false 
-var bool poc_is_in_buy = false 
-var bool poc_2_is_in_buy = false 
-var bool bot_liq_is_in_buy = false 
+var bool val_is_in_buy = false     //Lavorando con la ema scindo i livelli validi da quelli invalidi
+var bool vah_is_in_buy = false     //Lavorando con la ema scindo i livelli validi da quelli invalidi
+var bool poc_is_in_buy = false     //Lavorando con la ema scindo i livelli validi da quelli invalidi
+var bool poc_2_is_in_buy = false   //Lavorando con la ema scindo i livelli validi da quelli invalidi
+var bool bot_liq_is_in_buy = false //Lavorando con la ema scindo i livelli validi da quelli invalidi
 
 //Selezione di provenienza del trend 
-var int lenght_ema = (current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S") ? 17 :
- (current_timeframe == "15S" or current_timeframe == "30S" or current_timeframe == "45S") ? 12 : 
+var int lenght_ema = (current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S") ? 13 :
+ (current_timeframe == "15S" or current_timeframe == "30S" or current_timeframe == "45S") ? 11 : 
  (current_timeframe == "1" or current_timeframe == "3" or current_timeframe == "5") ? 7 : 5
 ema = ta.ema(close, lenght_ema)
-ema_trend_up = ema > ema[1]
-ema_trend_down = ema < ema[1] 
+ema_trend_up =   ema > ema[1] and barstate.isconfirmed
+ema_trend_down = ema < ema[1] and barstate.isconfirmed 
 
 ema_switch_up = ema_trend_down[1] and ema_trend_up and barstate.isconfirmed
 ema_switch_down = ema_trend_up[1] and ema_trend_down and barstate.isconfirmed
@@ -1708,38 +1710,38 @@ if ema_switch_down
 //
 
 if run > 0
-    if ema_value_before_start > val_perc and high[1] > val_level
+    if ema_value_before_start > val_level and high[1] > val_level
         val_is_in_buy := true 
     else
         val_is_in_buy := false 
     //
-    if ema_value_before_start > vah_perc and high[1] > vah_level
+    if ema_value_before_start > vah_level and high[1] > vah_level
         vah_is_in_buy := true 
     else
         vah_is_in_buy := false 
     //
-    if ema_value_before_start > poc_perc and high[1] > poc_level
+    if ema_value_before_start > poc_level and high[1] > poc_level
         poc_is_in_buy := true 
     else
         poc_is_in_buy := false 
     //
-    if ema_value_before_start > poc_2_perc and high[1] > poc_second_level
+    if ema_value_before_start > poc_second_level and high[1] > poc_second_level
         poc_2_is_in_buy := true 
     else
         poc_2_is_in_buy := false 
     //
-    if ema_value_before_start > bot_liq_perc and high[1] > bot_liq
+    if ema_value_before_start > bot_liq and high[1] > bot_liq
         bot_liq_is_in_buy := true 
     else
         bot_liq_is_in_buy := false 
 //
-
 
 // -------------------------------------}
 
 // Volume analisi
 // -----------------------------------------------------------{
 
+//Analisi sommaria del volume, al momento questa prima struttura di analisi risulta povera di funzioni utili salvo per il livello top compression, sono sicuro che un'analisi della coordinazione del volume potrebbe scindere pattern diversi
 var string volume_top_condition = na 
 var string volume_mid_condition = na 
 var string volume_bot_condition = na 
@@ -1867,7 +1869,7 @@ else
 
 var float break_start_perc = na 
 
-//
+// Analisi generale di mercato 
 if run > 0
     //Stringhe d'ingresso con run == 1 
     if run == 1 and bot_is_sup and not trend_up 
@@ -1890,7 +1892,7 @@ if run > 0
         market := "Trend Down"
     if market == "Trend Up" and not trend_up
         market := "Fall Accumula Liq"
-    if market == "Trend Down" and bot_is_sup and trend_up
+    if market == "Trend Down" and bot_is_sup 
         market := "Fall Accumula Liq"
     if market == "Trend Down" and trend_up
         market := "Fall Spike Up"
@@ -1910,7 +1912,7 @@ if run > 0
         active_mid_trade := false  
         market_buy_pattern := "No Buy Pattern" 
     //
-
+    //Impostazione degli scenari quando l'analisi di mercato fornisce un responso d'analisi
     if active_mid_trade 
         low_level := math.min(val_level, poc_second_level)
         //Definizione delle figure
@@ -1935,7 +1937,7 @@ if run > 0
         figura_bot_liq = not figura_vah_to_bot_target and not figura_val_to_bot_target and not figura_poc_to_bot_target and not figura_poc_2_to_bot_target
 
         //
-        if low_level <= lowerEndPrice_lr
+        if low_level <= lowerEndPrice_lr //Impostazione degli scenari quando i livelli di poc sono sotto la lr attuale
             if not up_breakout
                 //Vah
                 if market_buy_pattern  != "Vah Buy Fig" and figura_vah_to_bot_target 
@@ -1981,31 +1983,31 @@ if run > 0
             //
 
             ///////////////
-            //Inverto in base alla priorità di ordinamento 
+            //Impostazioni degli scenari di break - la attuale percentuale 15% dovrebbe diventare un dato modificato dal timeframe corrente, sarebbe opportuno inizializzarlo allo start del codice 
             if market_buy_pattern == "Break-out Fig"
                 if poc_second_level > poc_level 
                     if break_out_up_perc_mom > 13 and poc_perc < fib_perc_5 and poc_is_in_buy
                         market_buy_pattern := "Poc Break"
                     if break_out_up_perc_mom > 13 and (vah_perc < fib_perc_5) and vah_is_in_buy
                         market_buy_pattern := "Vah Break"
-                    if break_out_up_perc_mom > 13 and (poc_2_to_poc_vol_ratio > 50 and poc_2_perc < fib_perc_5) and poc_2_is_in_buy
+                    if break_out_up_perc_mom > 13 and (poc_2_to_poc_vol_ratio > 50 and poc_2_perc < fib_perc_4) and poc_2_is_in_buy
                         market_buy_pattern := "Poc 2 Break"
                 //
                 if poc_second_level < poc_level 
-                    if break_out_up_perc_mom > 13 and (poc_2_to_poc_vol_ratio > 50 and poc_2_perc < fib_perc_5) and poc_2_is_in_buy
+                    if break_out_up_perc_mom > 13 and (poc_2_to_poc_vol_ratio > 50 and poc_2_perc < fib_perc_4) and poc_2_is_in_buy
                         market_buy_pattern := "Poc 2 Break"
                     if break_out_up_perc_mom > 13 and poc_perc < fib_perc_5 and poc_is_in_buy
                         market_buy_pattern := "Poc Break"
                     if break_out_up_perc_mom > 13 and (vah_perc < fib_perc_5) and vah_is_in_buy
                         market_buy_pattern := "Vah Break"
                 //
-                if break_out_up_perc_mom <= 13 or (market_buy_pattern == "Break-out Fig" and val_level > bot_liq)
+                if ((break_out_up_perc_mom <= 13 or (market_buy_pattern == "Break-out Fig" and val_level > bot_liq)) or (market_buy_pattern == "Poc 2 Break" and val_level > poc_second_level and val_perc < fib_perc_5)) and val_is_in_buy
                     market_buy_pattern := "Val Break"
                 //
                 if market_buy_pattern == "Break-out Fig"
                     "No data after break" 
         //
-        if low_level > lowerEndPrice_lr
+        if low_level > lowerEndPrice_lr //Ricerca di scenari più bassi quando il poc è compreso nella lr
             market_buy_pattern := "Pendant Study" 
             if low_level == val_level
                 start_perc := val_perc
@@ -2022,10 +2024,11 @@ if run > 0
                 market_buy_pattern := "Val"
             if market_buy_pattern == "Pendant Study" and not val_is_in_buy and bot_liq_is_in_buy
                 market_buy_pattern := "Bot Liq"
-        if  market == "Switch Up Trend" 
+        if  market == "Switch Up Trend" //Scenario Max - l'idea è che lo sfondamento di una lr mobile indica un volume che ha nettamente rotto il trend. Sarebbe opportuno iterare la Siffredi solo quando real_pearson < -0.9/0.8 in questo modo mi assicuro che quel trend sta davvero cadendo
             market_buy_pattern := "Siffredi" 
-    
-    //
+        //
+
+// -------------------------------------}
 
 //Gestione dei livelli di target
 // -----------------------------------------------------------{
@@ -2042,16 +2045,22 @@ var int open_position_mid = 0
 var int open_position_bot = 0 
 var int open_position_break = 0
 var bool save_start_perc_bool = false 
+var float mid_ask = na
 
 var int mid_perc_min = 0
 var int mid_perc_mid = 0
 
 if open_position_mid == 0 
     save_start_perc := start_perc 
-    save_start_perc_bool := false  
+    if save_start_perc_bool
+        save_start_perc_bool := false  
 if open_position_mid > 0 and not save_start_perc_bool
     save_start_perc := start_perc[1]
     save_start_perc_bool := true 
+//
+if save_start_perc_bool and bot != bot[1]
+    save_start_perc := math.round(((mid_ask - bot) / global_distance) * 100)
+//
 
 mid_perc_min := save_start_perc + min_level
 mid_perc_mid := ((100 - mid_perc_min) / 2 ) + mid_perc_min
@@ -2068,13 +2077,19 @@ array.set(orig_perc_array, 4, top_liq_perc)
 array.set(orig_perc_array, 5, poc_2_perc)
 
 // Costanti critiche per thresholding
-
+var float first_bot_liq = na 
 int perc_mid = mid_level
+var int bot_liq_perc_used = na 
 
 //Imposto le percentuali per il bot 
-bot_perc_min = bot_liq_perc + min_level
-bot_perc_mid = ((100 - bot_perc_min) / 2 ) + bot_perc_min
+if na(first_bot_liq)
+    bot_liq_perc_used := bot_liq_perc
+else
+    bot_liq_perc_used := math.round(((first_bot_liq - bot) / global_distance) * 100)
+//
 
+bot_perc_min = bot_liq_perc_used + min_level
+bot_perc_mid = ((100 - bot_perc_min) / 2 ) + bot_perc_min
 
 actual_support_over_bot_perc_min = actual_support_over_bot_perc + min_level
 actual_support_over_bot_perc_mid = ((100 - actual_support_over_bot_perc_min) / 2 ) + actual_support_over_bot_perc_min
@@ -2170,8 +2185,6 @@ var float mid_higher_target = na
 
 // -------------------------------------}
 
-// -------------------------------------}
-
 // Logica posizioni intermedie e trig di ingresso
 // -----------------------------------------------------------{
 
@@ -2260,7 +2273,6 @@ var float scenario_break_out_ask = 0
 var float target_res = na 
 var int tot_position_scenario_bot = 0
 
-var float mid_ask = na
 var bool close_alarm_mid = false 
 
 var int tot_position_scenario_cover_1 = 0 
@@ -2292,12 +2304,17 @@ if tot_position_cover == 0 and last_cover > 0
     last_cover := 0
 //
 
+if not scenario_bot_line and not scenario_bot_2_line and not na(first_bot_liq)
+    first_bot_liq := na 
+//
+
 [mid_lower_target_perc, mid_higher_target_perc] = calculate_target_percentages(orig_perc_array, mid_perc_min, mid_perc_mid)
 
 mid_lower_target        := get_level_from_perc(mid_lower_target_perc)
 mid_higher_target        := get_level_from_perc(mid_higher_target_perc)
 
 stable_box = bot[1] == bot and top[1] == top 
+var float break_ask = na 
 
 if barstate.islast and run > 0
     //Trig di apertura
@@ -2413,7 +2430,6 @@ if barstate.islast and run > 0
              high > upperEndPrice_lr[1]) 
              and stable_box)) and open_position_mid > 0
 
-
     mid_higher_target_bot_trig = 
              (high >= mid_higher_target              or 
              high_perc == mid_higher_target_perc     or 
@@ -2423,6 +2439,8 @@ if barstate.islast and run > 0
              high > upperEndPrice_lr[1]) 
              and stable_box)) and open_position_mid > 0
 
+    chiusura_scenario_under_lower_lr = (open_position_break > 0 or real_pearson < 0.75) ? mid_lower_target_bot_trig : mid_higher_target_bot_trig
+
     actual_support_over_bot_target_trig_lower = 
              high >= lower_target_actual_support_over_bot              or 
              high_perc == lower_target_actual_support_over_bot_perc    or 
@@ -2430,17 +2448,25 @@ if barstate.islast and run > 0
              ((high >= lower_target_actual_support_over_bot[1]         or 
              high_perc == lower_target_actual_support_over_bot_perc[1] or 
              high > upperEndPrice_lr[1]) 
-             and stable_box)      
-    actual_support_over_bot_target_trig_higher = 
-             high >= higher_target_actual_support_over_bot              or 
-             high_perc == higher_target_actual_support_over_bot_perc    or 
-             high > upperEndPrice_lr                or
-             ((high >= higher_target_actual_support_over_bot[1]         or 
-             high_perc == higher_target_actual_support_over_bot_perc[1] or 
-             high > upperEndPrice_lr[1]) 
-             and stable_box)      
+             and stable_box) 
+    //
 
-    actual_support_trig = actual_support_over_bot_target_trig_lower or actual_support_over_bot_target_trig_higher
+    actual_support_trig = actual_support_over_bot_target_trig_lower 
+    //
+    any_trig_close = 
+         (low[1] < val_level            and high > val_level          )     or
+         (low[1] < val_level[1]         and high > val_level[1]       )     or
+         (low[1] < vah_level            and high > vah_level          )     or
+         (low[1] < vah_level[1]         and high > vah_level[1]       )     or
+         (low[1] < poc_level            and high > poc_level          )     or
+         (low[1] < poc_level[1]         and high > poc_level[1]       )     or
+         (low[1] < poc_second_level     and high > poc_second_level   )     or
+         (low[1] < poc_second_level[1]  and high > poc_second_level[1])     or
+         (low[1] < top_liq              and high > top_liq      )           or
+         (low[1] < top_liq[1]           and high > top_liq[1]   )  
+
+    low_trig  = any_trig_close and high_perc > min_level
+    high_trig = any_trig_close and high_perc > mid_level
     //
 
 // -------------------------------------}
@@ -2451,6 +2477,8 @@ if barstate.islast and run > 0
 // Buy Break out ID 13
 // -----------------------------------------------------------{
     var bool break_fail = false 
+    var bool target_upper_lr = false 
+
     bool scenario_break_out = false 
     if open_position_break > 0 and tot_position > 1
         break_fail := true 
@@ -2480,18 +2508,23 @@ if barstate.islast and run > 0
         scenario_break_out_line := 1
         scenario_break_out_ask  := vah_trig_base_act or vah_trig_base_old ? (vah_level + spread ): poc_2_trig_base_act or poc_2_trig_base_old ? poc_second_level + spread : poc_level + spread 
         //
-        target_res := (top_is_res and not na(old_res_1) ) ? old_res_1 : not na(old_res) ? old_res : top 
+        break_ask := scenario_break_out_ask
+        target_res := low_perc < fib_perc_4 ? top : not na(old_res) ? old_res : upperEndPrice_lr 
+        if target_res == upperEndPrice_lr
+            target_upper_lr := true 
         break_start_perc := (scenario_break_out_ask - bot) / ((top - bot) * 100)
         label scenario_break = label.new(bar_index, low - (high - low), "scenario break", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_break)
 
-    if scenario_break_out_line == 1 and scenario_break_out_line[1] == 1 and (high > target_res or break_fail) and high > scenario_break_out_ask
+    if scenario_break_out_line == 1 and scenario_break_out_line[1] == 1 and ((high > target_res and not target_upper_lr) or (high > upperEndPrice_lr and target_upper_lr) or break_fail) and high > scenario_break_out_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "13", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
         gain := high - scenario_break_out_ask
         total_gain := total_gain + gain
         //
+        break_ask := na 
+        target_upper_lr := false 
         break_fail := false 
         break_start_perc := na 
         label close_res = label.new(bar_index, high, "close scenario break", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2508,6 +2541,7 @@ if barstate.islast and run > 0
         scenario_break_out_line := 1
         scenario_break_out_ask  := vah_trig_base ? (vah_level + spread ): poc_2_trig_base ? poc_second_level + spread : val_trig_base ? val_level + spread : poc_level + spread
         //
+        break_ask := scenario_break_out_ask
         target_res := trend_up and not na(old_res_1) ? old_res_1 : trend_up and na(old_res_1) ? top : top_liq
         break_start_perc :=  (scenario_break_out_ask - bot) / ((top - bot) * 100)
 
@@ -2521,6 +2555,7 @@ if barstate.islast and run > 0
         gain := high - scenario_break_out_ask
         total_gain := total_gain + gain
         //
+        break_ask := na 
         break_fail := false 
         break_start_perc := na 
         label close_res = label.new(bar_index, high, "close scenario siffredi", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2549,8 +2584,10 @@ if barstate.islast and run > 0
 
     bool scenario_val_to_higher = false 
     var float take_val_to_top = na 
+    var float top_data_compression = na 
+    var string pendant_trig = na 
 
-    if market_buy_pattern == "Top Compression" or  market_buy_pattern[1] == "Top Compression"
+    if (market_buy_pattern == "Top Compression" or  market_buy_pattern[1] == "Top Compression")
         scenario_val_to_higher := (val_trig and (val_is_in_buy or val_is_in_buy[1])) 
     if market_buy_pattern == "Val" or  market_buy_pattern[1] == "Val"
         scenario_val_to_higher := val_trig
@@ -2568,23 +2605,33 @@ if barstate.islast and run > 0
         //
         label scenario_val_to_vah_box_label = label.new(bar_index, low, "scenario val", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_val_to_vah_box_label)
-        if market_buy_pattern == "Top Compression" and tot_res > 0
-            if top_is_res
+        if market_buy_pattern == "Top Compression"
+            if tot_res > 0 
                 take_val_to_top := old_res_1
-            if not top_is_res 
-                take_val_to_top := top
+            else
+                top_data_compression := top
+        if market_buy_pattern == "Val"
+            pendant_trig := "Val"
+        if market_buy_pattern == "Bot Liq"
+            pendant_trig := "Bot Liq"
         //
     //Metto na per chiudere prima la posizione al breakout
     if not na(take_val_to_top) and vah_level < vah_level[1]
         take_val_to_top := na 
     //
-    if scenario_val_to_higher_line == 1 and scenario_val_to_higher_line[1] == 1 and ((mid_higher_target_bot_trig and na(take_val_to_top)) or (not na(take_val_to_top) and high > take_val_to_top)) and high > scenario_val_to_higher_ask
+    if scenario_val_to_higher_line == 1 and scenario_val_to_higher_line[1] == 1 and 
+         (((high > upperEndPrice_lr or (high > top_data_compression and ema_switch_down)) and not na(top_data_compression)) or 
+         (not na(take_val_to_top) and high > take_val_to_top) or 
+         (na(take_val_to_top) and na(top_data_compression) and mid_lower_target_bot_trig and pendant_trig == "Bot Liq") or 
+         (na(take_val_to_top) and na(top_data_compression) and mid_higher_target_bot_trig and pendant_trig == "Val"))
+         and high > scenario_val_to_higher_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "12", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
         gain := high - scenario_val_to_higher_ask
         total_gain := total_gain + gain
         mid_ask := na
+        pendant_trig := na 
         //
         label close_val_to_vah_box_label = label.new(bar_index, high, "close scenario val", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, close_val_to_vah_box_label)
@@ -2616,7 +2663,7 @@ if barstate.islast and run > 0
         array.push(saved_labels, scenario_poc_2_to_bot_target_label)
         //
     if scenario_poc_2_to_bot_target_line == 1 and scenario_poc_2_to_bot_target_line[1] == 1 and 
-         (mid_higher_target_bot_trig) and high > scenario_poc_2_to_bot_target_ask
+         (chiusura_scenario_under_lower_lr) and high > scenario_poc_2_to_bot_target_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "12", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
@@ -2651,7 +2698,7 @@ if barstate.islast and run > 0
         label scenario_poc_to_bot_target_label = label.new(bar_index, low, "scenario_poc to bot target", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_poc_to_bot_target_label)
         //
-    if scenario_poc_to_bot_target_line == 1 and scenario_poc_to_bot_target_line[1] == 1 and (mid_higher_target_bot_trig) and high > scenario_poc_to_bot_target_ask
+    if scenario_poc_to_bot_target_line == 1 and scenario_poc_to_bot_target_line[1] == 1 and (chiusura_scenario_under_lower_lr) and high > scenario_poc_to_bot_target_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "12", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
@@ -2687,7 +2734,7 @@ if barstate.islast and run > 0
         label scenario_val_to_bot_target_label = label.new(bar_index, low, "scenario_val to bot target", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_val_to_bot_target_label)
        //
-    if scenario_val_to_bot_target_line == 1 and scenario_val_to_bot_target_line[1] == 1 and (mid_lower_target_bot_trig) and high > scenario_val_to_bot_target_ask
+    if scenario_val_to_bot_target_line == 1 and scenario_val_to_bot_target_line[1] == 1 and (chiusura_scenario_under_lower_lr) and high > scenario_val_to_bot_target_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "12", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
@@ -2723,7 +2770,7 @@ if barstate.islast and run > 0
         label scenario_vah_to_bot_target_label = label.new(bar_index, low, "scenario_vah to bot target", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_vah_to_bot_target_label)
         //
-    if scenario_vah_to_bot_target_line == 1 and scenario_vah_to_bot_target_line[1] == 1 and (mid_higher_target_bot_trig) and high > scenario_vah_to_bot_target_ask
+    if scenario_vah_to_bot_target_line == 1 and scenario_vah_to_bot_target_line[1] == 1 and (chiusura_scenario_under_lower_lr) and high > scenario_vah_to_bot_target_ask
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
          \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "12", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
@@ -2746,7 +2793,7 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
 
     open_position_mid := scenario_val_to_higher_line + scenario_poc_to_bot_target_line + scenario_val_to_bot_target_line + scenario_vah_to_bot_target_line + scenario_poc_2_to_bot_target_line
-
+    //
 
 // -------------------------------------}
 
@@ -2804,11 +2851,10 @@ if barstate.islast and run > 0
     scenario_bot_down = low < bot[1] and bot_is_sup[1] and not scenario_bot_line and not scenario_bot_2_line 
 
     scenario_bot_2 = old_sup_trig and not bot_is_sup and not scenario_bot_line and not scenario_bot_2_line and not cover_1_line[1]
-
     //Salvo due blocchi diversi di livelli cover a parte in modo da non raddoppiare la successiva iterazione del codice.
-
     if (scenario_bot or scenario_bot_down) and not scenario_bot_line
         scenario_bot_line   := true 
+        first_bot_liq := bot_liq
         if not na(old_sup)
             supporto_1 := old_sup
         if not na(old_sup_1)
@@ -2820,6 +2866,7 @@ if barstate.islast and run > 0
         //
     if scenario_bot_2 and not scenario_bot_2_line
         scenario_bot_2_line := true 
+        first_bot_liq := bot_liq
         if not na(old_sup_1)
             supporto_1 := old_sup_1
         if not na(old_sup_2)
@@ -2843,7 +2890,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_bot_label)
 
         //
-        if scenario_bot and scenario_bot_line_to_h == 0 and open_position_break == 0 //togliere la posizione quando le cover di sotto sono aperte
+        if scenario_bot and scenario_bot_line_to_h == 0 and (open_position_break + open_position_mid) < 2 //togliere la posizione quando le cover di sotto sono aperte
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\": {5}, \"data\": {6} \"epic\": \"{7}\", 
              \"direction\": \"{8}\", \"size\": {9} {10} {11} {12}", "{", "{", "true", "OPEN", "2", str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}", "}"), alert.freq_once_per_bar)
             //
@@ -2855,7 +2902,7 @@ if barstate.islast and run > 0
 
         //Attualmente molte chiusure si chiudono in un banale overbuy, sarà opportuno adattare lo studio del pearson anche a questo gruppo di chiusure 
 
-        if scenario_bot_line_to_l == 1 and scenario_bot_line_to_l[1] == 1 and ((lower_target_bot_trig and not cover_1_line) or (ema_switch_down and cover_1_line)) and high > scenario_bot_ask_to_l
+        if scenario_bot_line_to_l == 1 and scenario_bot_line_to_l[1] == 1 and ((lower_target_bot_trig) or (ema_switch_down and cover_1_line)) and high > scenario_bot_ask_to_l
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "1", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             if high > mid_ask and not na(mid_ask)
@@ -2877,7 +2924,7 @@ if barstate.islast and run > 0
             scenario_bot_ask_to_l  := 0
         //
 
-        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_bot_trig and not cover_1_line and market_buy_pattern != "Siffredi") or (scenario_bot_siffredi) or (ema_switch_down and cover_1_line)) and high > scenario_bot_ask_to_h
+        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_bot_trig) or (ema_switch_down and cover_2_line)) and high > scenario_bot_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "2", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             //
@@ -2904,7 +2951,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_bot_label)
 
         //
-        if scenario_bot_2 and scenario_bot_line_to_h == 0 and open_position_break == 0 //togliere la posizione quando le cover di sotto sono aperte
+        if scenario_bot_2 and scenario_bot_line_to_h == 0 and (open_position_break + open_position_mid) < 2 //togliere la posizione quando le cover di sotto sono aperte
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\": {5}, \"data\": {6} \"epic\": \"{7}\", 
              \"direction\": \"{8}\", \"size\": {9} {10} {11} {12}", "{", "{", "true", "OPEN", "2", str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}", "}"), alert.freq_once_per_bar)
             //
@@ -2929,7 +2976,7 @@ if barstate.islast and run > 0
             scenario_bot_line_to_l := 0
             scenario_bot_ask_to_l  := 0
         //
-        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_trig and not cover_1_line and market_buy_pattern != "Siffredi") or (scenario_bot_siffredi) or (ema_switch_down and cover_1_line)) and high > scenario_bot_ask_to_h
+        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_bot_trig) or (scenario_bot_siffredi) or (ema_switch_down and cover_2_line)) and high > scenario_bot_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "2", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             if high > mid_ask and not na(mid_ask)
@@ -3009,7 +3056,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_cover_1_label_l)
         //
         //Chiusure
-        if scenario_cover_1_line_to_l == 1 and ((lower_target_bot_trig and not cover_2_line) or (ema_switch_down and cover_2_line))  and high > scenario_cover_1_ask_to_l
+        if scenario_cover_1_line_to_l == 1 and ((low_trig) or (ema_switch_down and cover_2_line) or (high > scenario_bot_ask_to_h and not na (scenario_bot_ask_to_h)))  and high > scenario_cover_1_ask_to_l
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "3", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_1_ask_to_l
@@ -3025,7 +3072,7 @@ if barstate.islast and run > 0
             supporto_3 := old_sup_1
             supporto_4 := old_sup_2
             //
-        if scenario_cover_1_line_to_h == 1 and ((higher_target_trig and not cover_2_line) or (ema_switch_down and cover_2_line)) and high > scenario_cover_1_ask_to_h
+        if scenario_cover_1_line_to_h == 1 and ((high_trig) or (ema_switch_down and cover_3_line)) and high > scenario_cover_1_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "4", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_1_ask_to_h
@@ -3076,7 +3123,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_cover_2_label_l)
         //
         //Chiusure
-        if scenario_cover_2_line_to_l == 1 and ((lower_target_bot_trig and not cover_3_line) or (ema_switch_down and cover_3_line)) and high > scenario_cover_2_ask_to_l
+        if scenario_cover_2_line_to_l == 1 and ((low_trig) or (ema_switch_down and cover_3_line) or (high > scenario_cover_1_ask_to_h and not na(scenario_cover_1_ask_to_h))) and high > scenario_cover_2_ask_to_l
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "5", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_2_ask_to_l
@@ -3091,7 +3138,7 @@ if barstate.islast and run > 0
             supporto_3 := old_sup
             supporto_4 := old_sup_1
             //
-        if scenario_cover_2_line_to_h == 1 and ((higher_target_trig and not cover_3_line) or (ema_switch_down and cover_3_line)) and high > scenario_cover_2_ask_to_h
+        if scenario_cover_2_line_to_h == 1 and ((high_trig) or (ema_switch_down and cover_4_line)) and high > scenario_cover_2_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "6", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_2_ask_to_h
@@ -3141,7 +3188,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_cover_3_label_l)
         //
         //Chiusure
-        if scenario_cover_3_line_to_l == 1 and ((lower_target_bot_trig and not cover_4_line) or (ema_switch_down and cover_4_line))  and high > scenario_cover_3_ask_to_l
+        if scenario_cover_3_line_to_l == 1 and ((low_trig) or (ema_switch_down and cover_4_line) or (high > scenario_cover_2_ask_to_h and not na(scenario_cover_2_ask_to_h)))  and high > scenario_cover_3_ask_to_l
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "7", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_3_ask_to_l
@@ -3155,7 +3202,7 @@ if barstate.islast and run > 0
             supporto_3 := bot
             supporto_4 := old_sup
         //
-        if scenario_cover_3_line_to_h == 1 and ((higher_target_trig and not cover_4_line) or (ema_switch_down and cover_4_line)) and high > scenario_cover_3_ask_to_h
+        if scenario_cover_3_line_to_h == 1 and high_trig and high > scenario_cover_3_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "8", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_3_ask_to_h
@@ -3204,7 +3251,7 @@ if barstate.islast and run > 0
             array.push(saved_labels, scenario_cover_4_label_l)
         //
         //Chiusure
-        if scenario_cover_4_line_to_l == 1 and lower_target_bot_trig  and high > scenario_cover_4_ask_to_l
+        if scenario_cover_4_line_to_l == 1 and (low_trig or (high > scenario_cover_3_ask_to_h and not na(scenario_cover_3_ask_to_h)))  and high > scenario_cover_4_ask_to_l
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "9", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_4_ask_to_l
@@ -3217,7 +3264,7 @@ if barstate.islast and run > 0
             scenario_cover_4_ask_to_l  := 0
             supporto_4 := bot
             //
-        if scenario_cover_4_line_to_h == 1 and (higher_target_trig) and high > scenario_cover_4_ask_to_h
+        if scenario_cover_4_line_to_h == 1 and (high_trig) and high > scenario_cover_4_ask_to_h
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"real\": {2}, \"action\": \"{3}\", \"id\": \"{4}\", \"timenow\":{5}, 
              \"epic\": \"{6}\" {7} {8}", "{", "{", "true", "CLOSE", "10", str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             gain := high - scenario_cover_4_ask_to_h
@@ -3423,4 +3470,3 @@ table.cell(plotTable, 0, 2, "N. Titoli", text_color = color.white, bgcolor = col
 table.cell(plotTable, 1, 2, str.tostring(n_titoli), text_color = color.white)
 table.cell(plotTable, 0, 3, "Dist. Cover", text_color = color.white, bgcolor = color.new(color.blue, 90))
 table.cell(plotTable, 1, 3, str.tostring(media_vol, "#.##"), text_color = color.white)
-
