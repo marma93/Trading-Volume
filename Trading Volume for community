@@ -77,103 +77,103 @@ if na(titolo)
     //Indici o driver tradabili 
     if titolo == "US30" 
         spread := 2 
-        n_titoli := 0.01
+        n_titoli := na  
     if titolo == "TECDAX" 
         spread := 11 
-        n_titoli := 0.04
+        n_titoli := na  
     if titolo == "US100" 
         spread := 1.8 
-        n_titoli := 0.01 
+        n_titoli := na  
     if titolo == "GOLD" 
         spread := 0.1
-        n_titoli := 0.1 
+        n_titoli := na  
     if titolo == "DE40" 
         spread := 1.5 
-        n_titoli := 0.02
+        n_titoli := na  
     if titolo == "NYFANG" 
         spread := 4 
-        n_titoli := 0.01
+        n_titoli := na  
     if titolo == "US500" 
         spread := 0.02
-        n_titoli := 0.04
+        n_titoli := na 
     if titolo == "BTCUSD" 
         spread := 50 
-        n_titoli := 0.00015
+        n_titoli := na  
     if titolo == "EURUSD" 
         spread := 0.00006 
-        n_titoli := 200
+        n_titoli := na  
     if titolo == "OIL_CRUDE" 
         spread := 0.03 
-        n_titoli := 1.5
+        n_titoli := na  
     if titolo == "RTY" 
         spread := 0.5 
-        n_titoli := 0.05
+        n_titoli := na  
     if titolo == "HK50" 
         spread := 30 
-        n_titoli := 0.03
+        n_titoli := na  
     if titolo == "FR40" 
         spread := 0.8 
-        n_titoli := 0.02
+        n_titoli := na  
     if titolo == "IT40" 
         spread := 18 
-        n_titoli := 0.002
+        n_titoli := na  
     //Stock Us 
     if titolo == "UNH" 
         spread := 0.3 
-        n_titoli := 0.2 
+        n_titoli := na   
     if titolo == "MSFT" 
         spread := 1.1 
-        n_titoli := 0.2
+        n_titoli := na  
     if titolo == "GOOG" 
         spread := 0.22 
-        n_titoli := 0.6
+        n_titoli := na  
     if titolo == "TSLA" 
         spread := 0.37 
-        n_titoli := 0.1
+        n_titoli := na  
     if titolo == "NVDA" 
         spread := 0.11 
-        n_titoli := 0.6
+        n_titoli := na  
     if titolo == "AMZN" 
         spread := 0.17 
-        n_titoli := 0.4
+        n_titoli := na  
     if titolo == "META" 
         spread := 1.6 
-        n_titoli := 0.1
+        n_titoli := na  
     if titolo == "AAPL" 
         spread := 0.27 
-        n_titoli := 0.4
+        n_titoli := na  
     if titolo == "PEP" 
         spread := 0.18 
-        n_titoli := 0.4
+        n_titoli := na  
     if titolo == "NFLX" 
         spread := 1.98 
-        n_titoli := 0.04
+        n_titoli := na  
     if titolo == "C" 
         spread := 0.7
-        n_titoli := 1
+        n_titoli := na  
 
     //Stock Eu 
     if titolo == "KER" 
         spread := 0.4 
-        n_titoli := 0.4
+        n_titoli := na  
     if titolo == "LDO" 
         spread := 0.25 
-        n_titoli := 0.5
+        n_titoli := na  
     if titolo == "RACEM" 
         spread := 1.04
-        n_titoli := 0.2
+        n_titoli := na 
     if titolo == "CPR" 
         spread := 0.025 
-        n_titoli := 10
+        n_titoli := na  
     if titolo == "RHM" 
         spread := 4
-        n_titoli := 0.05
+        n_titoli := na  
     if titolo == "NEXI" 
         spread := 0.10
-        n_titoli := 10
+        n_titoli := na  
     if titolo == "ASML" 
         spread := 1.5
-        n_titoli := 0.1
+        n_titoli := na  
     //
 
 // Percentili VIX predefiniti
