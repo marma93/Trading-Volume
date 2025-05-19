@@ -1770,10 +1770,28 @@ var float ema_value_before_start = na
 
 //Verifico che per le partenze di val e poi - o comunque di tutte le partenze non in bot o sup, la provenienza del trend sia alta.
 if ema_switch_up 
-    ema_value_before_start := ta.lowest(low, lenght_ema) 
+    ema_value_before_start := ta.lowest(low, lenght_ema/2) 
 if ema_switch_down
-    ema_value_before_start := ta.highest(high, lenght_ema) 
+    ema_value_before_start := ta.highest(high, lenght_ema/2)
+    last_ema_switch_down := ema_value_before_start
+    contatore_ema_switch_down := 0 
 //
+if not ema_switch_down
+    contatore_ema_switch_down += 1
+//
+
+//Interpolazione di prezzo per evitare falsi segnali 
+var float prezzo_interpolato_lr_start = na 
+if run == 1 
+    prezzo_interpolato_lr_start := upperStartPrice_lr + (upperEndPrice_lr - upperStartPrice_lr) * (bbars - contatore_ema_switch_down) / bbars
+//
+if not na(prezzo_interpolato_lr_start) and ema_switch_down
+    prezzo_interpolato_lr_start := na 
+    //
+
+ema_over_lr = (last_ema_switch_down > upperEndPrice_lr[contatore_ema_switch_down] and bbars == (bbars[1] + 1)) or 
+ (not na(prezzo_interpolato_lr_start) and last_ema_switch_down > prezzo_interpolato_lr_start )
+
 
 if run > 0
     if ema_value_before_start > val_level and high[1] > val_level
