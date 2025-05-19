@@ -1782,7 +1782,7 @@ if not ema_switch_down
 
 //Interpolazione di prezzo per evitare falsi segnali 
 var float prezzo_interpolato_lr_start = na 
-if run == 1 
+if run == 1 or (bar_reach[1] and bbars < bbars[1])
     prezzo_interpolato_lr_start := upperStartPrice_lr + (upperEndPrice_lr - upperStartPrice_lr) * (bbars - contatore_ema_switch_down) / bbars
 //
 if not na(prezzo_interpolato_lr_start) and ema_switch_down
