@@ -3,12 +3,12 @@ indicator('Buy Bot Volume Indicator', max_bars_back = 5000,max_boxes_count=200, 
 
 //Buy Bot Volume Indicator
 //Copyright (C) 2025 MrM - Manuel
- 
+  
 // Questo programma è software libero: puoi ridistribuirlo e/o modificarlo
 // secondo i termini della GNU General Public License come pubblicata dalla
 //Free Software Foundation, sia la versione 3 della Licenza, sia
 //(a tua scelta) una versione successiva.
- 
+  
 //Questo programma è distribuito nella speranza che sia utile,
 //ma SENZA ALCUNA GARANZIA; senza neppure la garanzia implicita di
 //COMMERCIABILITÀ o IDONEITÀ PER UN PARTICOLARE SCOPO. Vedi la
@@ -68,45 +68,9 @@ var int timeframe_level = na
 
 // Assegnazione del livello in base al timeframe
 if run == 0
-    // Timeframe fino a 15 secondi = livello 0
-    if current_timeframe == "1S" or 
-         current_timeframe == "5S" or 
-         current_timeframe == "10S" or 
-         current_timeframe == "15S" 
-        timeframe_level := 0 
-    
-    // Timeframe da 30s a 2 minuti = livello 1
-    if current_timeframe == "30S" or 
-         current_timeframe == "45S" or 
-         current_timeframe == "1" or
-         current_timeframe == "2"
-        timeframe_level := 1
-    
-    // Timeframe da 3 a 10 minuti = livello 2
-    if current_timeframe == "3" or 
-         current_timeframe == "5" or 
-         current_timeframe == "10"
-        timeframe_level := 2
-    
-    // Timeframe da 15 a 45 minuti = livello 3
-    if current_timeframe == "15" or 
-         current_timeframe == "30" or 
-         current_timeframe == "45"
-        timeframe_level := 3
-    
-    // Timeframe da 1 ora a 4 ore = livello 4
-    if current_timeframe == "60" or 
-         current_timeframe == "120" or 
-         current_timeframe == "180" or 
-         current_timeframe == "240"       
-        timeframe_level := 4
-    
-    // Timeframe superiori = livello 5
-    if current_timeframe == "D" or 
-         current_timeframe == "W" or 
-         current_timeframe == "M"
-        timeframe_level := 5
-     
+    timeframe_level := (current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S" or current_timeframe == "15S") ? 0 : (current_timeframe == "30S" or current_timeframe == "45S" or current_timeframe == "1" or current_timeframe == "2") ? 1 : (current_timeframe == "3" or current_timeframe == "5" or current_timeframe == "10") ? 2 : (current_timeframe == "15" or current_timeframe == "30" or current_timeframe == "45") ? 3 : (current_timeframe == "60" or current_timeframe == "120" or current_timeframe == "180" or current_timeframe == "240") ? 4 : (current_timeframe == "D" or current_timeframe == "W" or current_timeframe == "M") ? 5 : timeframe_level
+    //
+
 // ----------------------------------------}
 
 // Gestione titoli e timframe
@@ -115,110 +79,83 @@ if run == 0
 var float spread = na
 var string titolo = na 
 var float n_titoli = na 
-
 if na(titolo) 
     titolo := syminfo.ticker 
     //Indici o driver tradabili 
-    if titolo == "US30" 
-        spread := 2 
-        n_titoli := na  
-    if titolo == "TECDAX" 
-        spread := 11 
-        n_titoli := na  
-    if titolo == "US100" 
-        spread := 1.8 
-        n_titoli := na  
-    if titolo == "GOLD" 
-        spread := 0.1
-        n_titoli := na  
-    if titolo == "DE40" 
-        spread := 1.5 
-        n_titoli := na  
-    if titolo == "NYFANG" 
-        spread := 4 
-        n_titoli := na  
-    if titolo == "US500" 
-        spread := 0.02
-        n_titoli := na 
-    if titolo == "BTCUSD" 
-        spread := 50 
-        n_titoli := na  
-    if titolo == "EURUSD" 
-        spread := 0.00006 
-        n_titoli := na  
-    if titolo == "OIL_CRUDE" 
-        spread := 0.03 
-        n_titoli := na  
-    if titolo == "RTY" 
-        spread := 0.5 
-        n_titoli := na  
-    if titolo == "HK50" 
-        spread := 30 
-        n_titoli := na  
-    if titolo == "FR40" 
-        spread := 0.8 
-        n_titoli := na  
-    if titolo == "IT40" 
-        spread := 18 
-        n_titoli := na  
-    //Stock Us 
-    if titolo == "UNH" 
-        spread := 0.3 
-        n_titoli := na   
-    if titolo == "MSFT" 
-        spread := 1.1 
-        n_titoli := na  
-    if titolo == "GOOG" 
-        spread := 0.22 
-        n_titoli := na  
-    if titolo == "TSLA" 
-        spread := 0.37 
-        n_titoli := na  
-    if titolo == "NVDA" 
-        spread := 0.11 
-        n_titoli := na  
-    if titolo == "AMZN" 
-        spread := 0.17 
-        n_titoli := na  
-    if titolo == "META" 
-        spread := 1.6 
-        n_titoli := na  
-    if titolo == "AAPL" 
-        spread := 0.27 
-        n_titoli := na  
-    if titolo == "PEP" 
-        spread := 0.18 
-        n_titoli := na  
-    if titolo == "NFLX" 
-        spread := 1.98 
-        n_titoli := na  
-    if titolo == "C" 
-        spread := 0.7
-        n_titoli := na  
-
-    //Stock Eu 
-    if titolo == "KER" 
-        spread := 0.4 
-        n_titoli := na  
-    if titolo == "LDO" 
-        spread := 0.25 
-        n_titoli := na  
-    if titolo == "RACEM" 
-        spread := 1.04
-        n_titoli := na 
-    if titolo == "CPR" 
-        spread := 0.025 
-        n_titoli := na  
-    if titolo == "RHM" 
-        spread := 4
-        n_titoli := na  
-    if titolo == "NEXI" 
-        spread := 0.10
-        n_titoli := na  
-    if titolo == "ASML" 
-        spread := 1.5
-        n_titoli := na  
-    //
+    spread := titolo == "US30"     ? 2         : 
+             titolo == "TECDAX"    ? 11        : 
+             titolo == "US100"     ? 1.8       : 
+             titolo == "GOLD"      ? 0.1       : 
+             titolo == "DE40"      ? 1.5       : 
+             titolo == "NYFANG"    ? 4         : 
+             titolo == "US500"     ? 0.02      : 
+             titolo == "BTCUSD"    ? 50        : 
+             titolo == "EURUSD"    ? 0.00006   : 
+             titolo == "OIL_CRUDE" ? 0.03      : 
+             titolo == "RTY"       ? 0.5       : 
+             titolo == "HK50"      ? 30        : 
+             titolo == "FR40"      ? 0.8       : 
+             titolo == "IT40"      ? 18        : 
+             titolo == "UNH"       ? 0.3       : 
+             titolo == "MSFT"      ? 1.1       : 
+             titolo == "GOOG"      ? 0.22      : 
+             titolo == "TSLA"      ? 0.37      : 
+             titolo == "NVDA"      ? 0.11      : 
+             titolo == "AMZN"      ? 0.17      : 
+             titolo == "META"      ? 1.6       : 
+             titolo == "AAPL"      ? 0.27      : 
+             titolo == "PEP"       ? 0.18      : 
+             titolo == "NFLX"      ? 1.98      : 
+             titolo == "C"         ? 0.7       : 
+             titolo == "KER"       ? 0.4       : 
+             titolo == "BRBY"      ? 0.23      : 
+             titolo == "LDO"       ? 0.25      : 
+             titolo == "RACEM"     ? 1.04      : 
+             titolo == "CPR"       ? 0.025     : 
+             titolo == "RHM"       ? 4         : 
+             titolo == "NEXI"      ? 0.10      : 
+             titolo == "ASML"      ? 1.5       : 
+             titolo == "BABA"      ? 0.12      : 
+             titolo == "CL"        ? 0.15      : 
+             na
+              
+    n_titoli := titolo == "US30"       ? na  : 
+                 titolo == "TECDAX"    ? na  : 
+                 titolo == "US100"     ? na  : 
+                 titolo == "GOLD"      ? na  : 
+                 titolo == "DE40"      ? na  : 
+                 titolo == "NYFANG"    ? na  : 
+                 titolo == "US500"     ? na  : 
+                 titolo == "BTCUSD"    ? na  : 
+                 titolo == "EURUSD"    ? na  : 
+                 titolo == "OIL_CRUDE" ? na  : 
+                 titolo == "RTY"       ? na  : 
+                 titolo == "HK50"      ? na  : 
+                 titolo == "FR40"      ? na  : 
+                 titolo == "IT40"      ? na  : 
+                 titolo == "UNH"       ? na  : 
+                 titolo == "MSFT"      ? na  : 
+                 titolo == "GOOG"      ? na  : 
+                 titolo == "TSLA"      ? na  : 
+                 titolo == "NVDA"      ? na  : 
+                 titolo == "AMZN"      ? na  : 
+                 titolo == "META"      ? na  : 
+                 titolo == "AAPL"      ? na  : 
+                 titolo == "PEP"       ? na  : 
+                 titolo == "NFLX"      ? na  : 
+                 titolo == "C"         ? na  : 
+                 titolo == "KER"       ? na  : 
+                 titolo == "BRBY"      ? na  : 
+                 titolo == "LDO"       ? na  : 
+                 titolo == "RACEM"     ? na  : 
+                 titolo == "CPR"       ? na  : 
+                 titolo == "RHM"       ? na  : 
+                 titolo == "NEXI"      ? na  : 
+                 titolo == "ASML"      ? na  : 
+                 //na
+                 titolo == "BABA"      ? na  : 
+                 titolo == "CL"        ? na  : 
+                 na
 
 // Percentili VIX predefiniti
 var float p05 = 12.29
@@ -321,8 +258,8 @@ var bool  top_is_res = false //Definisce se i pivot corrispondono al livello top
 
 //Vengono confrontati diversi livelli di pivot, il pivot old e quello normale servono per i margini di gioco, quelli fast per il sistema ad inefficienza rapida per le posizioni cover (rappresenza un rischio a timeframe bassi quando la volatilità implicita è elevata e vengono infinte usati dei sistemi di pivot 1,1 per controllare la liquidità interna (pivot basso per top e alto per bot))
 //Gestione supporti e resistenze 
-supporto   = bar_index > 1000 ? ta.pivotlow  (low,  bbars_2, bbars_2)   : na 
-resistenza = bar_index > 1000 ? ta.pivothigh (high, bbars_2, bbars_2)   : na 
+supporto   = bar_index > 1 ? ta.pivotlow  (low,  bbars_2, bbars_2)   : na 
+resistenza = bar_index > 1 ? ta.pivothigh (high, bbars_2, bbars_2)   : na 
 
 switch_supporto   = not na(supporto)
 switch_resistenza = not na(resistenza)
@@ -1168,6 +1105,10 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     if run > 0 and bot != bot[1] and array.size(a_sup) > 0
         tot_sup := 0 
         //
+        old_sup   := na
+        old_sup_1 := na
+        old_sup_2 := na
+        old_sup_3 := na
         array.sort(a_sup, order.descending)  // Ordine decrescente per supporti
         // Trova il primo supporto <= actual_supporto
         for i = 0 to array.size(a_sup) - 1
@@ -1219,6 +1160,11 @@ if (barstate.isconfirmed and run > 0 ) or (run == 0 and barstate.islastconfirmed
     if run > 0 and top != top[1] and array.size(a_sup) > 0
         tot_res := 0 
         //
+        old_res   := na
+        old_res_1 := na
+        old_res_2 := na
+        old_res_3 := na
+
         array.sort(a_sup, order.ascending) // Ordine crescente per resistenze
         
         // Trova la prima resistenza >= actual_resistenza
@@ -1658,9 +1604,9 @@ var bool  trend_up          = false
 var float perc_trend        = na 
 
 // Calcola la pendenza come percentuale
-percent_change = (endPrice_lr - startPrice_lr) * 100 / startPrice_lr
+percent_change = run > 0 ? (endPrice_lr - startPrice_lr) * 100 / startPrice_lr : na 
 
-if percent_change >= 0 and barstate.isconfirmed and run > 0
+if percent_change >= 0 and run > 0
     trend_up := true
 else
     trend_up := false
@@ -1722,7 +1668,7 @@ new_fib_perc_5 = math.round(((fib_perc_5 - bot_liq) / bot_liq_distance) * 100)
 var float fib_for_break     = na 
 var float fib_for_scenario  = na 
 
-if timeframe_level == 0
+if timeframe_level <= 1
     if sentiment_level[1] == 0
         fib_for_scenario := fib_perc_3
     else 
@@ -1733,13 +1679,10 @@ if timeframe_level == 0
     else
         fib_for_break := fib_perc_4
 //
-else
-    fib_for_scenario := fib_perc_4
-    //
-    if sentiment_level[1] > 1 and tot_res > 0
-        fib_for_break := fib_perc_5
-    else
-        fib_for_break := fib_perc_4
+else if timeframe_level > 1
+
+    fib_for_scenario := fib_perc_5
+    fib_for_break := fib_perc_5
 //
 
 // -------------------------------------}
@@ -1754,11 +1697,12 @@ var bool vah_is_in_buy = false     //Lavorando con la ema scindo i livelli valid
 var bool poc_is_in_buy = false     //Lavorando con la ema scindo i livelli validi da quelli invalidi
 var bool poc_2_is_in_buy = false   //Lavorando con la ema scindo i livelli validi da quelli invalidi
 var bool bot_liq_is_in_buy = false //Lavorando con la ema scindo i livelli validi da quelli invalidi
+var bool act_sup_is_in_buy = false //Lavorando con la ema scindo i livelli validi da quelli invalidi
 
 //Selezione di provenienza del trend 
 var int lenght_ema = (current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S") ? 13 :
  (current_timeframe == "15S" or current_timeframe == "30S" or current_timeframe == "45S") ? 11 : 
- (current_timeframe == "1" or current_timeframe == "3" or current_timeframe == "5") ? 7 : 5
+ (current_timeframe == "1" or current_timeframe == "2" or current_timeframe == "3" or current_timeframe == "5") ? 7 : 5
 ema = ta.ema(close, lenght_ema)
 ema_trend_up =   ema > ema[1] and barstate.isconfirmed
 ema_trend_down = ema < ema[1] and barstate.isconfirmed 
@@ -1767,6 +1711,8 @@ ema_switch_up = ema_trend_down[1] and ema_trend_up and barstate.isconfirmed
 ema_switch_down = ema_trend_up[1] and ema_trend_down and barstate.isconfirmed
 
 var float ema_value_before_start = na 
+var int contatore_ema_switch_down = na 
+var float last_ema_switch_down = na 
 
 //Verifico che per le partenze di val e poi - o comunque di tutte le partenze non in bot o sup, la provenienza del trend sia alta.
 if ema_switch_up 
@@ -1783,7 +1729,7 @@ if not ema_switch_down
 //Interpolazione di prezzo per evitare falsi segnali 
 var float prezzo_interpolato_lr_start = na 
 if run == 1 or (bar_reach[1] and bbars < bbars[1])
-    prezzo_interpolato_lr_start := upperStartPrice_lr + (upperEndPrice_lr - upperStartPrice_lr) * (bbars - contatore_ema_switch_down) / bbars
+    prezzo_interpolato_lr_start := upperStartPrice_lr + ((upperEndPrice_lr - upperStartPrice_lr) * (bbars - contatore_ema_switch_down) / bbars)
 //
 if not na(prezzo_interpolato_lr_start) and ema_switch_down
     prezzo_interpolato_lr_start := na 
@@ -1791,7 +1737,6 @@ if not na(prezzo_interpolato_lr_start) and ema_switch_down
 
 ema_over_lr = (last_ema_switch_down > upperEndPrice_lr[contatore_ema_switch_down] and bbars == (bbars[1] + 1)) or 
  (not na(prezzo_interpolato_lr_start) and last_ema_switch_down > prezzo_interpolato_lr_start )
-
 
 if run > 0
     if ema_value_before_start > val_level and high[1] > val_level
@@ -1818,7 +1763,29 @@ if run > 0
         bot_liq_is_in_buy := true 
     else
         bot_liq_is_in_buy := false 
+    if ema_value_before_start > actual_supporto and high[1] > actual_supporto and actual_supporto == actual_supporto[1]
+        act_sup_is_in_buy := true 
+    else
+        act_sup_is_in_buy := false 
 //
+
+var bool trade_is_covered = true 
+var float break_ask = na 
+var float copertura_bot_line = na 
+var int open_position_mid = 0 
+var int open_position_break = 0
+
+copertura_bot_line := bot_is_sup ? bot_liq : old_sup
+
+//if tot_position                 == 0 and not trade_is_covered
+//    trade_is_covered := true 
+////
+//if open_position_break          == 1 and tot_position == 1
+//    max_level_second_position := break_ask - bot 
+//if open_position_mid            == 1 and tot_position == 1
+//
+//if tot_position_scenario_bot    == 2 and tot_position == 2
+
 
 // -------------------------------------}
 
@@ -1982,7 +1949,7 @@ if run > 0
         market := "Fall Spike Up"
     //
     //Iterazione per prevedere lo switch del trend verso l'alto 
-    if (market == "Fall Accumula Liq" or market == "Trend Down") and (high > upperEndPrice_lr or ema_switch_perc > upper_lr_perc )
+    if (market == "Fall Accumula Liq" or market == "Trend Down") and (high > upperEndPrice_lr or ema_over_lr )
         market := "Switch Up Trend"
     if market == "Switch Up Trend" and (trend_up)
         market := "Trend Up"
@@ -2127,9 +2094,6 @@ var float higher_target_bot = na
 var float lower_target_actual_support_over_bot = na
 var float higher_target_actual_support_over_bot = na
 var int save_start_perc = na 
-var int open_position_mid = 0 
-var int open_position_bot = 0 
-var int open_position_break = 0
 var bool save_start_perc_bool = false 
 var float mid_ask = na
 
@@ -2277,8 +2241,6 @@ var float mid_higher_target = na
 // Var posizioni 
 // -----------------------------------------------------------{
 
-var float total_gain = 0
-var float gain       = 0 
 var int posizione_attive_no_cover = 0
 
 //Scenario Bot Line 
@@ -2400,7 +2362,6 @@ mid_lower_target        := get_level_from_perc(mid_lower_target_perc)
 mid_higher_target        := get_level_from_perc(mid_higher_target_perc)
 
 stable_box = bot[1] == bot and top[1] == top 
-var float break_ask = na 
 
 if barstate.islast and run > 0
     var int n_posizione = na
@@ -2486,10 +2447,8 @@ if barstate.islast and run > 0
     higher_target_bot_trig = 
              high >= higher_target_bot              or 
              high_perc == higher_target_perc_bot    or 
-             high > upperEndPrice_lr                or
              ((high >= higher_target_bot[1]         or 
-             high_perc == higher_target_perc_bot[1] or 
-             high > upperEndPrice_lr[1]) 
+             high_perc == higher_target_perc_bot[1])
              and stable_box)      
 
     higher_target_trig = 
@@ -2515,7 +2474,7 @@ if barstate.islast and run > 0
              ((high >= mid_lower_target[1]          or 
              high_perc == mid_lower_target_perc[1]  or 
              high > upperEndPrice_lr[1]) 
-             and stable_box)) and open_position_mid > 0
+             and stable_box)) and open_position_mid > 0 and save_start_perc == save_start_perc[1]
 
     mid_higher_target_bot_trig = 
              (high >= mid_higher_target              or 
@@ -2526,7 +2485,7 @@ if barstate.islast and run > 0
              high > upperEndPrice_lr[1]) 
              and stable_box)) and open_position_mid > 0
  
-    chiusura_scenario_under_lower_lr = ((open_position_break > 0 or pearsonR_lr[1] < 0.75) and stable_box) ? mid_lower_target_bot_trig : mid_higher_target_bot_trig
+    chiusura_scenario_under_lower_lr = (((open_position_break > 0 or pearsonR_lr[1] < 0.75) and stable_box) ? mid_lower_target_bot_trig : mid_higher_target_bot_trig)
 
     actual_support_over_bot_target_trig_lower = 
              high >= lower_target_actual_support_over_bot              or 
@@ -2592,7 +2551,7 @@ if barstate.islast and run > 0
         n_posizione := 13
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_break_out_line := 1
         scenario_break_out_ask  := vah_trig_base_act or vah_trig_base_old ? (vah_level + spread ): poc_2_trig_base_act or poc_2_trig_base_old ? poc_second_level + spread : poc_level + spread 
@@ -2610,9 +2569,6 @@ if barstate.islast and run > 0
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
-        gain := high - scenario_break_out_ask
-        total_gain := total_gain + gain
-        //
         break_ask := na 
         target_upper_lr := false 
         break_fail := false 
@@ -2628,7 +2584,7 @@ if barstate.islast and run > 0
         n_posizione := 23
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_break_out_line := 1
         scenario_break_out_ask  := vah_trig_base ? (vah_level + spread ): poc_2_trig_base ? poc_second_level + spread : val_trig_base ? val_level + spread : poc_level + spread
@@ -2644,9 +2600,6 @@ if barstate.islast and run > 0
         n_posizione := 23
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-        //
-        gain := high - scenario_break_out_ask
-        total_gain := total_gain + gain
         //
         break_ask := na 
         break_fail := false 
@@ -2687,11 +2640,11 @@ if barstate.islast and run > 0
     if market_buy_pattern == "Bot Liq" or  market_buy_pattern[1] == "Bot Liq"
         scenario_val_to_higher := bot_liq_trig
         
-    if scenario_val_to_higher and scenario_val_to_higher_line == 0 and open_position_mid == 0 and open_position_bot == 0 
+    if scenario_val_to_higher and scenario_val_to_higher_line == 0 and open_position_mid == 0 and tot_position_scenario_bot == 0 
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_val_to_higher_line := 1
         scenario_val_to_higher_ask  := market_buy_pattern == "Bot Liq" ? bot_liq + spread  : val_level + spread 
@@ -2724,8 +2677,6 @@ if barstate.islast and run > 0
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
-        gain := high - scenario_val_to_higher_ask
-        total_gain := total_gain + gain
         mid_ask := na
         pendant_trig := na 
         //
@@ -2744,13 +2695,13 @@ if barstate.islast and run > 0
 
     bool scenario_poc_2_to_bot_target = false 
     if market_buy_pattern == "Poc 2 Buy Fig" or market_buy_pattern[1] == "Poc 2 Buy Fig"
-        scenario_poc_2_to_bot_target := poc_2_trig and (poc_2_is_in_buy or poc_2_is_in_buy[1]) and open_position_mid == 0 and open_position_bot == 0 
+        scenario_poc_2_to_bot_target := poc_2_trig and (poc_2_is_in_buy or poc_2_is_in_buy[1]) and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
     if scenario_poc_2_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_poc_2_to_bot_target_line := 1
         scenario_poc_2_to_bot_target_ask  := poc_second_level + spread 
@@ -2766,8 +2717,6 @@ if barstate.islast and run > 0
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
-        gain := high - scenario_poc_2_to_bot_target_ask
-        total_gain := total_gain + gain
         mid_ask := na
         //
         label close_poc_2_to_bot_higher_label = label.new(bar_index, high, "close scenario poc 2 to bot target", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2783,13 +2732,13 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
     bool scenario_poc_to_bot_target = false 
     if market_buy_pattern == "Poc Buy Fig" or market_buy_pattern[1] == "Poc Buy Fig"
-        scenario_poc_to_bot_target := poc_trig and (poc_is_in_buy or poc_is_in_buy[1]) and open_position_mid == 0 and open_position_bot == 0 
+        scenario_poc_to_bot_target := poc_trig and (poc_is_in_buy or poc_is_in_buy[1]) and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
     if scenario_poc_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_poc_to_bot_target_line := 1
         scenario_poc_to_bot_target_ask  := poc_level + spread 
@@ -2803,10 +2752,7 @@ if barstate.islast and run > 0
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-         
         //
-        gain := high - scenario_poc_to_bot_target_ask
-        total_gain := total_gain + gain
         mid_ask := na
         //
         label close_poc_to_bot_higher_label = label.new(bar_index, high, "close scenario poc to bot target", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2823,13 +2769,13 @@ if barstate.islast and run > 0
 
     bool scenario_val_to_bot_target = false 
     if market_buy_pattern == "Val Buy Fig" or market_buy_pattern[1] == "Val Buy Fig"
-        scenario_val_to_bot_target := val_trig and (val_is_in_buy or val_is_in_buy[1])  and open_position_mid == 0 and open_position_bot == 0 
+        scenario_val_to_bot_target := val_trig and (val_is_in_buy or val_is_in_buy[1])  and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
     if scenario_val_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_val_to_bot_target_line := 1
         scenario_val_to_bot_target_ask  := val_level + spread 
@@ -2844,8 +2790,6 @@ if barstate.islast and run > 0
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
-        gain := high - scenario_val_to_bot_target_ask
-        total_gain := total_gain + gain
         mid_ask := na
         //
         label close_val_to_bot_higher_label = label.new(bar_index, high, "close scenario val to bot target", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2862,13 +2806,13 @@ if barstate.islast and run > 0
 
     bool scenario_vah_to_bot_target = false 
     if market_buy_pattern == "Vah Buy Fig" or market_buy_pattern[1] == "Vah Buy Fig"
-        scenario_vah_to_bot_target := vah_trig and (vah_is_in_buy or vah_is_in_buy[1])  and open_position_mid == 0 and open_position_bot == 0 
+        scenario_vah_to_bot_target := vah_trig and (vah_is_in_buy or vah_is_in_buy[1])  and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
     if scenario_vah_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_vah_to_bot_target_line := 1
         scenario_vah_to_bot_target_ask  := vah_level + spread 
@@ -2883,8 +2827,6 @@ if barstate.islast and run > 0
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
          \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
         //
-        gain := high - scenario_vah_to_bot_target_ask
-        total_gain := total_gain + gain
         mid_ask := na
         //
         label close_vah_to_bot_higher_label = label.new(bar_index, high, "close scenario vah to bot target", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
@@ -2919,13 +2861,13 @@ if barstate.islast and run > 0
 // Buy actual support over bot 
 // -----------------------------------------------------------{
 
-    scenario_actual_over_bot = actual_support_over_bot_perc < 50 and actual_supporto > bot and bot_is_sup and low[1] > actual_supporto and low < actual_supporto and actual_supporto == actual_supporto[1] and actual_supporto < mid_ask and tot_position_scenario_bot == 0 and not cover_1_line
+    scenario_actual_over_bot = actual_support_over_bot_perc < 50 and actual_supporto > bot and bot_is_sup and low[1] > actual_supporto and low < actual_supporto and act_sup_is_in_buy and actual_supporto < mid_ask and tot_position_scenario_bot == 0 and not cover_1_line
 
     if scenario_actual_over_bot and open_position_break == 0 
         n_posizione := 11
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
-          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
+         str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_actual_over_bot_line := 1
         scenario_actual_over_bot_ask  := low + spread * 2
@@ -2944,11 +2886,7 @@ if barstate.islast and run > 0
             close_alarm_mid := true
             label close_alarm_mid_label = label.new(bar_index, high + high - low, "close alarm mid", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, close_alarm_mid_label)
-            gain := high - mid_ask 
-            total_gain := total_gain + gain 
         //
-        gain := high - scenario_actual_over_bot_ask
-        total_gain := total_gain + gain
         //
         label close_actual_over_bot = label.new(bar_index, high, "close actual over bot", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, close_actual_over_bot)
@@ -2992,7 +2930,7 @@ if barstate.islast and run > 0
     //Iterazioni quando bot_is_sup  
     if scenario_bot_line
         
-        if (scenario_bot and scenario_bot_line_to_l == 0) or (scenario_bot_down and scenario_bot_line_to_l == 0)
+        if ((scenario_bot and scenario_bot_line_to_l == 0) or (scenario_bot_down and scenario_bot_line_to_l == 0)) and (scenario_actual_over_bot_line == 0 or (open_position_break + open_position_mid) == 1 and scenario_actual_over_bot_line == 1)
             n_posizione := 1 
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
              \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
@@ -3030,11 +2968,6 @@ if barstate.islast and run > 0
                 close_alarm_mid := true
                 label close_alarm_mid_label = label.new(bar_index, high + high - low, "close alarm mid", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
                 array.push(saved_labels, close_alarm_mid_label)
-                gain := high - mid_ask 
-                total_gain := total_gain + gain 
-            //
-            gain := high - scenario_bot_ask_to_l
-            total_gain := total_gain + gain
             //
             label scenario_bot_close_label_l = label.new(bar_index, high, "close scenario_bot l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_bot_close_label_l)
@@ -3048,9 +2981,6 @@ if barstate.islast and run > 0
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             //
-            gain := high - scenario_bot_ask_to_h
-            total_gain := total_gain + gain
-            //
             label scenario_bot_close_label_h = label.new(bar_index, high, "close scenario_bot h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_bot_close_label_h)
             //
@@ -3060,7 +2990,7 @@ if barstate.islast and run > 0
     //Iterazioni quando not bot_is_sup 
     if scenario_bot_2_line 
         
-        if scenario_bot_2 and scenario_bot_line_to_l == 0 and (scenario_actual_over_bot_line == 0)
+        if scenario_bot_2 and scenario_bot_line_to_l == 0 and (scenario_actual_over_bot_line == 0 or (open_position_break + open_position_mid) == 2)
             n_posizione := 1
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
              \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
@@ -3092,9 +3022,6 @@ if barstate.islast and run > 0
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
             //
-            gain := high - scenario_bot_ask_to_l
-            total_gain := total_gain + gain
-            //
             label scenario_bot_close_label_l = label.new(bar_index, high, "close scenario_bot l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_bot_close_label_l)
             //
@@ -3112,12 +3039,7 @@ if barstate.islast and run > 0
                 close_alarm_mid := true
                 label close_alarm_mid_label = label.new(bar_index, high + high - low, "close alarm mid", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
                 array.push(saved_labels, close_alarm_mid_label)
-                gain := high - mid_ask 
-                total_gain := total_gain + gain 
-            //
-            //
-            gain := high - scenario_bot_ask_to_h
-            total_gain := total_gain + gain
+
             //
             label scenario_bot_close_label_h = label.new(bar_index, high, "close scenario_bot h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_bot_close_label_h)
@@ -3191,8 +3113,7 @@ if barstate.islast and run > 0
             n_posizione := 4
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_1_ask_to_l
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_1_close_label_l = label.new(bar_index, high, "close scenario_cover_1 l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_1_close_label_l)
@@ -3208,8 +3129,7 @@ if barstate.islast and run > 0
             n_posizione := 3
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_1_ask_to_h
-            total_gain := total_gain + gain
+ 
             //
             label scenario_cover_1_close_label_h = label.new(bar_index, high, "close scenario_cover_1 h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_1_close_label_h)
@@ -3264,8 +3184,7 @@ if barstate.islast and run > 0
             n_posizione := 6
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_2_ask_to_l
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_2_close_label_l = label.new(bar_index, high, "close scenario_cover_2 l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_2_close_label_l)
@@ -3280,8 +3199,7 @@ if barstate.islast and run > 0
             n_posizione := 5
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_2_ask_to_h
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_2_close_label_h = label.new(bar_index, high, "close scenario_cover_2 h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_2_close_label_h)
@@ -3335,8 +3253,7 @@ if barstate.islast and run > 0
             n_posizione := 8
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_3_ask_to_l
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_3_close_label_l = label.new(bar_index, high, "close scenario_cover_3 l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_3_close_label_l)
@@ -3350,8 +3267,7 @@ if barstate.islast and run > 0
             n_posizione := 7
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_3_ask_to_h
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_3_close_label_h = label.new(bar_index, high, "close scenario_cover_3 h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_3_close_label_h)
@@ -3404,8 +3320,7 @@ if barstate.islast and run > 0
             n_posizione := 10
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_4_ask_to_l
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_4_close_label_l = label.new(bar_index, high, "close scenario_cover_4 l", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_4_close_label_l)
@@ -3418,8 +3333,7 @@ if barstate.islast and run > 0
             n_posizione := 9
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
-            gain := high - scenario_cover_4_ask_to_h
-            total_gain := total_gain + gain
+
             //
             label scenario_cover_4_close_label_h = label.new(bar_index, high, "close scenario_cover_4 h", color=negativeColor, style=label.style_label_down, textcolor=color.white, size=size.small, force_overlay = true)
             array.push(saved_labels, scenario_cover_4_close_label_h)
@@ -3475,12 +3389,18 @@ if run > 1 and not show_plot
         box.delete(array.get(vol_bars, x + cnum))
 //
 tot_position_cover := tot_position_scenario_cover_1 + tot_position_scenario_cover_2 + tot_position_scenario_cover_3 + tot_position_scenario_cover_4
-tot_position := tot_position_cover + open_position_break + open_position_bot + open_position_mid
+tot_position := tot_position_cover + open_position_break + tot_position_scenario_bot + open_position_mid
 
 if run == 2 and bbars == bar_limit
     alert("Bar Limit Reach",alert.freq_once_per_bar)
     run += 1
 //
+
+// -------------------------------------}
+
+// Sezione di copertura sell
+// -----------------------------------------------------------{
+
 
 // -------------------------------------}
 
@@ -3621,3 +3541,4 @@ table.cell(plotTable, 0, 2, "N. Titoli", text_color = color.white, bgcolor = col
 table.cell(plotTable, 1, 2, str.tostring(n_titoli), text_color = color.white)
 table.cell(plotTable, 0, 3, "Dist. Cover", text_color = color.white, bgcolor = color.new(color.blue, 90))
 table.cell(plotTable, 1, 3, str.tostring(media_vol, "#.##"), text_color = color.white)
+//
