@@ -59,17 +59,38 @@ var int tot_position = 0
 var int tot_position_cover = 0 
 var bool bot_liq_modified = false //Questo blocco trova le inefficienze di apertura di mercato e comprime le relative liquidità di zona
 var bool top_liq_modified = false //Questo blocco trova le inefficienze di apertura di mercato e comprime le relative liquidità di zona
-var string current_timeframe = timeframe.period
 var float min_0_3 = close / 100 * 0.2 // Minimo sindacale per la distanza delle posizioni cover, aumentandolo aumenta la distanza delle posizioni cover
+var string current_timeframe = timeframe.period
 //
+var int timeframe_level = 
+    // SECONDI - Level 0
+     (current_timeframe == "S" or current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S" or current_timeframe == "15S") ? 0 : 
+    
+    // SECONDI ALTI - Level 1  
+     (current_timeframe == "30S" or current_timeframe == "45S" or current_timeframe == "1" or current_timeframe == "1m" or current_timeframe == "2" or current_timeframe == "2m") ? 1 : 
+     
+    // MINUTI BASSI - Level 2
+     (current_timeframe == "3" or current_timeframe == "3m" or current_timeframe == "5" or current_timeframe == "5m" or current_timeframe == "10" or current_timeframe == "10m") ? 2 : 
+    
+    // MINUTI MEDI - Level 3
+     (current_timeframe == "15" or current_timeframe == "15m" or current_timeframe == "30" or current_timeframe == "30m" or current_timeframe == "45" or current_timeframe == "45m") ? 3 : 
+    
+    // ORE - Level 4
+     (current_timeframe == "60" or current_timeframe == "1H" or current_timeframe == "1h" or 
+     current_timeframe == "120" or current_timeframe == "2H" or current_timeframe == "2h" or 
+     current_timeframe == "180" or current_timeframe == "3H" or current_timeframe == "3h" or 
+     current_timeframe == "240" or current_timeframe == "4H" or current_timeframe == "4h" or
+     current_timeframe == "360" or current_timeframe == "6H" or current_timeframe == "6h" or
+     current_timeframe == "480" or current_timeframe == "8H" or current_timeframe == "8h" or
+     current_timeframe == "720" or current_timeframe == "12H" or current_timeframe == "12h") ? 4 : 
+    
+    // GIORNI/SETTIMANE/MESI - Level 5
+     (current_timeframe == "D" or current_timeframe == "1D" or current_timeframe == "d" or 
+     current_timeframe == "W" or current_timeframe == "1W" or current_timeframe == "w" or 
+     current_timeframe == "M" or current_timeframe == "1M") ? 5 : -99
 
-// Inizializzazione della variabile
-var int timeframe_level = na 
 
-// Assegnazione del livello in base al timeframe
-if run == 0
-    timeframe_level := (current_timeframe == "1S" or current_timeframe == "5S" or current_timeframe == "10S" or current_timeframe == "15S") ? 0 : (current_timeframe == "30S" or current_timeframe == "45S" or current_timeframe == "1" or current_timeframe == "2") ? 1 : (current_timeframe == "3" or current_timeframe == "5" or current_timeframe == "10") ? 2 : (current_timeframe == "15" or current_timeframe == "30" or current_timeframe == "45") ? 3 : (current_timeframe == "60" or current_timeframe == "120" or current_timeframe == "180" or current_timeframe == "240") ? 4 : (current_timeframe == "D" or current_timeframe == "W" or current_timeframe == "M") ? 5 : timeframe_level
-    //
+
 
 // ----------------------------------------}
 
@@ -152,7 +173,7 @@ if na(titolo)
                  titolo == "RHM"       ? na  : 
                  titolo == "NEXI"      ? na  : 
                  titolo == "ASML"      ? na  : 
-                 //na
+                 //
                  titolo == "BABA"      ? na  : 
                  titolo == "CL"        ? na  : 
                  na
@@ -647,7 +668,7 @@ if not bot_is_sup
 // Dichiarazioni Volume indicator + dichiarazioni liq
 // -----------------------------------------------------------{
 
-var int cnum = current_timeframe == "1S" ? 50 : 100 // in quante righe suddividere le barre del volume profile
+var int cnum = 100
 
 global_distance = top - bot //Calcolo la distanza globale per preparare un banale sistema di proporzioni e trasformare in percentuale i dati, questo aiuta a triggerare più facilmente i valori che si avvicinano al target predefinito
 step = global_distance / cnum
@@ -1769,23 +1790,6 @@ if run > 0
         act_sup_is_in_buy := false 
 //
 
-var bool trade_is_covered = true 
-var float break_ask = na 
-var float copertura_bot_line = na 
-var int open_position_mid = 0 
-var int open_position_break = 0
-
-copertura_bot_line := bot_is_sup ? bot_liq : old_sup
-
-//if tot_position                 == 0 and not trade_is_covered
-//    trade_is_covered := true 
-////
-//if open_position_break          == 1 and tot_position == 1
-//    max_level_second_position := break_ask - bot 
-//if open_position_mid            == 1 and tot_position == 1
-//
-//if tot_position_scenario_bot    == 2 and tot_position == 2
-
 
 // -------------------------------------}
 
@@ -1796,6 +1800,10 @@ copertura_bot_line := bot_is_sup ? bot_liq : old_sup
 var string volume_top_condition = na 
 var string volume_mid_condition = na 
 var string volume_bot_condition = na 
+var float break_ask = na 
+var int open_position_mid = 0 
+var int open_position_break = 0
+
 
 var int top_level_vol = na 
 var int mid_level_vol = na 
@@ -1969,21 +1977,21 @@ if run > 0
         //Definizione delle figure
         figura_vah_to_bot_target = vah_perc <= fib_for_scenario and vah_perc <= (lower_lr_perc) and vah_perc > (bot_liq_perc)
          and vah_is_in_buy and 
-         (na(break_start_perc) or (not na(break_start_perc) and vah_perc[1]   < (break_start_perc - (min_level[1] / 2)))) //Questa struttura serve per abbassare la posizione mid quando la posizone break è aperta
+         (na(break_start_perc) or (not na(break_start_perc) and vah_perc   < (break_start_perc - (min_level[1] / 2)))) //Questa struttura serve per abbassare la posizione mid quando la posizone break è aperta
  
         figura_poc_to_bot_target = ((poc_perc <= fib_for_scenario) or (not na(new_fib_perc_5) and new_poc_perc <= new_fib_perc_5)) 
          and poc_perc <= (lower_lr_perc) and poc_perc > (bot_liq_perc) 
          and poc_is_in_buy and not figura_vah_to_bot_target and 
-         (na(break_start_perc) or (not na(break_start_perc) and poc_perc[1]   < (break_start_perc - (min_level[1] / 2))))
+         (na(break_start_perc) or (not na(break_start_perc) and poc_perc   < (break_start_perc - (min_level[1] / 2))))
 
         figura_val_to_bot_target = (val_perc <= fib_for_scenario and val_perc <= (lower_lr_perc) and val_perc > (bot_liq_perc)
          and val_is_in_buy and not figura_poc_to_bot_target) and not figura_poc_to_bot_target and not figura_vah_to_bot_target and 
-         (na(break_start_perc) or (not na(break_start_perc) and val_perc[1]   < (break_start_perc - (min_level[1] / 2))))
+         (na(break_start_perc) or (not na(break_start_perc) and val_perc   < (break_start_perc - (min_level[1] / 2))))
 
         figura_poc_2_to_bot_target = ((poc_2_perc <= fib_for_scenario and poc_2_perc <= (lower_lr_perc) and poc_2_perc > (bot_liq_perc)
          and poc_2_is_in_buy and not figura_val_to_bot_target and not figura_vah_to_bot_target and not figura_poc_to_bot_target and low_level == poc_second_level) or 
          (poc_2_perc <= fib_for_scenario and poc_2_perc <= (lower_lr_perc) and poc_2_perc > bot_liq_perc and poc_2_is_in_buy and poc_second_level > poc_level and poc_2_to_poc_vol_ratio > 50)) and 
-         (na(break_start_perc) or (not na(break_start_perc) and poc_2_perc[1] < (break_start_perc - (min_level[1] / 2))))
+         (na(break_start_perc) or (not na(break_start_perc) and poc_2_perc < (break_start_perc - (min_level[1] / 2))))
 
         figura_bot_liq = not figura_vah_to_bot_target and not figura_val_to_bot_target and not figura_poc_to_bot_target and not figura_poc_2_to_bot_target
 
@@ -2075,10 +2083,12 @@ if run > 0
                 market_buy_pattern := "Val"
             if market_buy_pattern == "Pendant Study" and not val_is_in_buy and bot_liq_is_in_buy
                 market_buy_pattern := "Bot Liq"
-        if  market == "Switch Up Trend" and not trend_up and pearsonR_lr > 0.75 //Scenario Max - l'idea è che lo sfondamento di una lr mobile indica un volume che ha nettamente rotto il trend. Sarebbe opportuno iterare la Siffredi solo quando real_pearson < -0.9/0.8 in questo modo mi assicuro che quel trend sta davvero cadendo
+        if  market == "Switch Up Trend" and not trend_up and pearsonR_lr >= 0.8 //Scenario Max - l'idea è che lo sfondamento di una lr mobile indica un volume che ha nettamente rotto il trend. Sarebbe opportuno iterare la Siffredi solo quando real_pearson < -0.9/0.8 in questo modo mi assicuro che quel trend sta davvero cadendo
             market_buy_pattern := "Siffredi" 
-        if  market == "Switch Up Trend" and not trend_up and pearsonR_lr < 0.75 
+        if  market == "Switch Up Trend" and not trend_up and pearsonR_lr < 0.8 
             market_buy_pattern := "Siffredi look for break" 
+            if pearsonR_lr > 0.5
+                market_buy_pattern := "Siffredi is gone" 
         //
 
 // -------------------------------------}
@@ -2370,63 +2380,55 @@ if barstate.islast and run > 0
              (high[1] >= val_level          and low <= val_level)         or
              (high_perc[1] >= val_perc      and low_perc <= val_perc)     or
              (low[1] >= val_level           and low <= val_level)         or 
-             (low_perc[1] >= val_perc       and low_perc <= val_perc))    and stable_box
+             (low_perc[1] >= val_perc       and low_perc <= val_perc))    and stable_box and val_is_in_buy
              //
     val_trig_base_old = (
              (high[1] >= val_level[1]       and low <= val_level[1]    )  or
              (high_perc[1] >= val_perc[1]   and low_perc <= val_perc[1])  or
              (low[1] >= val_level[1]        and low <= val_level[1]    )  or 
-             (low_perc[1] >= val_perc[1]    and low_perc <= val_perc[1])) and stable_box
+             (low_perc[1] >= val_perc[1]    and low_perc <= val_perc[1])) and stable_box and val_is_in_buy
 
-    val_trig_base = val_trig_base_act or val_trig_base_old
-    val_trig = val_trig_base and val_is_in_buy
-    val_trig_break = val_trig and low_perc < lower_lr_perc
+    val_trig_break_act = val_trig_base_act and low_perc < lower_lr_perc
+    val_trig_break_old = val_trig_base_old and low_perc < lower_lr_perc
 
     vah_trig_base_act = (
              (high[1] >= vah_level          and low <= vah_level)         or
              (high_perc[1] >= vah_perc      and low_perc <= vah_perc)     or
              (low[1] >= vah_level           and low <= vah_level)         or 
-             (low_perc[1] >= vah_perc       and low_perc <= vah_perc))    and stable_box
+             (low_perc[1] >= vah_perc       and low_perc <= vah_perc))    and stable_box and vah_is_in_buy
              //
     vah_trig_base_old = (
              (high[1] >= vah_level[1]       and low <= vah_level[1]      ) or
              (high_perc[1] >= vah_perc[1]   and low_perc <= vah_perc[1]  ) or
              (low[1] >= vah_level[1]        and low <= vah_level[1]      ) or 
-             (low_perc[1] >= vah_perc[1]    and low_perc <= vah_perc[1] )) and stable_box
-
-    vah_trig_base = vah_trig_base_act or vah_trig_base_old
-    vah_trig = vah_trig_base and vah_is_in_buy
+             (low_perc[1] >= vah_perc[1]    and low_perc <= vah_perc[1] )) and stable_box and vah_is_in_buy
 
     poc_trig_base_act = (
              (high[1] >= poc_level          and low <= poc_level)           or
              (high_perc[1] >= poc_perc      and low_perc <= poc_perc)       or
              (low[1] >= poc_level           and low <= poc_level)           or 
-             (low_perc[1] >= poc_perc       and low_perc <= poc_perc))      and stable_box
+             (low_perc[1] >= poc_perc       and low_perc <= poc_perc))      and stable_box and poc_is_in_buy
              //
     poc_trig_base_old = (
              (high[1] >= poc_level[1]       and low <= poc_level[1]      )  or
              (high_perc[1] >= poc_perc[1]   and low_perc <= poc_perc[1]  )  or
              (low[1] >= poc_level[1]        and low <= poc_level[1]      )  or 
-             (low_perc[1] >= poc_perc[1]    and low_perc <= poc_perc[1] ))  and stable_box
-
-    poc_trig_base = poc_trig_base_act or poc_trig_base_old
-    poc_trig = poc_trig_base and poc_is_in_buy
+             (low_perc[1] >= poc_perc[1]    and low_perc <= poc_perc[1] ))  and stable_box and poc_is_in_buy
 
     poc_2_trig_base_act = (
              (high[1] >= poc_second_level    and low <= poc_second_level)       or
              (high_perc[1] >= poc_2_perc     and low_perc <= poc_2_perc)        or
              (low[1] >= poc_second_level     and low <= poc_second_level)       or 
-             (low_perc[1] >= poc_2_perc      and low_perc <= poc_2_perc))       and stable_box    
+             (low_perc[1] >= poc_2_perc      and low_perc <= poc_2_perc))       and stable_box and poc_2_is_in_buy
              //
     poc_2_trig_base_old = (
              (high[1] >= poc_second_level[1] and low <= poc_second_level[1])    or
              (high_perc[1] >= poc_2_perc[1]  and low_perc <= poc_2_perc[1] )    or
              (low[1] >= poc_second_level[1]  and low <= poc_second_level[1])    or 
-             (low_perc[1] >= poc_2_perc[1]   and low_perc <= poc_2_perc[1] ))   and stable_box
+             (low_perc[1] >= poc_2_perc[1]   and low_perc <= poc_2_perc[1] ))   and stable_box and poc_2_is_in_buy
 
-    poc_2_trig_base = poc_2_trig_base_act or poc_2_trig_base_old
-    poc_2_trig = poc_2_trig_base and poc_2_is_in_buy
-    poc_2_trig_break = poc_2_trig and low_perc < lower_lr_perc 
+    poc_2_trig_break_act = poc_2_trig_base_act and low_perc < lower_lr_perc 
+    poc_2_trig_break_old = poc_2_trig_base_old and low_perc < lower_lr_perc 
 
     bot_liq_trig = (
              (high[1] >= bot_liq                and low <= bot_liq)                 or
@@ -2437,7 +2439,7 @@ if barstate.islast and run > 0
              (high[1] >= bot_liq[1]             and low <= bot_liq[1]          )    or
              (high_perc[1] >= bot_liq_perc[1]   and low_perc <= bot_liq_perc[1])    or
              (low[1] >= bot_liq[1]              and low <= bot_liq[1]          )    or 
-             (low_perc[1] >= bot_liq_perc[1]    and low_perc <= bot_liq_perc[1]) )  and bot_liq_is_in_buy and stable_box
+             (low_perc[1] >= bot_liq_perc[1]    and low_perc <= bot_liq_perc[1]) )  and stable_box and bot_liq_is_in_buy
 
     old_sup_trig = 
              (low[1] > old_sup[1] and low <= old_sup[1]) or
@@ -2524,28 +2526,27 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
     var bool break_fail = false 
     var bool target_upper_lr = false 
-
+    var bool bot_liq_block = false 
     bool scenario_break_out = false 
     if open_position_break > 0 and tot_position > 1
         break_fail := true 
     //
-    if  market_buy_pattern == "Poc 2 Break" 
-        scenario_break_out := poc_2_trig_base_act
-    if  market_buy_pattern == "Poc Break" 
-        scenario_break_out := poc_trig_base_act
-    if  market_buy_pattern == "Vah Break" 
-        scenario_break_out := vah_trig_base_act
-    if  market_buy_pattern[1] == "Poc 2 Break" 
-        scenario_break_out := poc_2_trig_base_old
-    if  market_buy_pattern[1] == "Poc Break" 
-        scenario_break_out := poc_trig_base_old
-    if  market_buy_pattern[1] == "Vah Break" 
-        scenario_break_out := vah_trig_base_old
+    scenario_break_out := market_buy_pattern    == "Poc 2 Break"    ? poc_2_trig_base_act  :
+                         market_buy_pattern     == "Poc Break"      ? poc_trig_base_act    :
+                         market_buy_pattern     == "Vah Break"      ? vah_trig_base_act    :
+                         market_buy_pattern[1]  == "Poc 2 Break"    ? poc_2_trig_base_old  :
+                         market_buy_pattern[1]  == "Poc Break"      ? poc_trig_base_old    :
+                         market_buy_pattern[1]  == "Vah Break"      ? vah_trig_base_old    :
+                         false        
+                        
     var bool siffredi_fatta = false 
     
     bool scenario_siffredi = false 
-    if (market_buy_pattern == "Siffredi" or market_buy_pattern[1] == "Siffredi") or ((market_buy_pattern == "Siffredi look for break" or market_buy_pattern[1] == "Siffredi look for break" ) and not na(old_res))
-        scenario_siffredi := ((vah_trig) or (poc_2_trig) or poc_trig or (val_trig)) and not siffredi_fatta
+
+    if (market_buy_pattern == "Siffredi") or ((market_buy_pattern == "Siffredi look for break") and not na(old_res))
+        scenario_siffredi := ((vah_trig_base_act) or (poc_2_trig_base_act) or poc_trig_base_act or (val_trig_base_act)) and not siffredi_fatta
+    if (market_buy_pattern[1] == "Siffredi") or ((market_buy_pattern[1] == "Siffredi look for break") and not na(old_res[1]))
+        scenario_siffredi := ((vah_trig_base_old) or (poc_2_trig_base_old) or poc_trig_base_old or (val_trig_base_old)) and not siffredi_fatta
 
     if scenario_break_out and open_position_mid == 0 and tot_position_scenario_bot == 0 and scenario_break_out_line == 0
         n_posizione := 13
@@ -2554,7 +2555,13 @@ if barstate.islast and run > 0
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_break_out_line := 1
-        scenario_break_out_ask  := vah_trig_base_act or vah_trig_base_old ? (vah_level + spread ): poc_2_trig_base_act or poc_2_trig_base_old ? poc_second_level + spread : poc_level + spread 
+        scenario_break_out_ask := vah_trig_base_act   ? (vah_level + spread)            :
+                                 vah_trig_base_old    ? (vah_level[1] + spread)         :
+                                 poc_2_trig_base_act  ? (poc_second_level + spread)     :
+                                 poc_2_trig_base_old  ? (poc_second_level[1] + spread)  :
+                                 poc_trig_base_act    ? (poc_level + spread)            :
+                                 poc_trig_base_old    ? (poc_level[1] + spread)         :
+                                 (poc_level + spread)        
         //
         break_ask := scenario_break_out_ask
         target_res := low_perc < fib_perc_4 ? top : not na(old_res) ? old_res : upperEndPrice_lr 
@@ -2587,11 +2594,17 @@ if barstate.islast and run > 0
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_break_out_line := 1
-        scenario_break_out_ask  := vah_trig_base ? (vah_level + spread ): poc_2_trig_base ? poc_second_level + spread : val_trig_base ? val_level + spread : poc_level + spread
+        scenario_break_out_ask := vah_trig_base_act   ? (vah_level + spread)            :
+                                 vah_trig_base_old    ? (vah_level[1] + spread)         :
+                                 poc_2_trig_base_act  ? (poc_second_level + spread)     :
+                                 poc_2_trig_base_old  ? (poc_second_level[1] + spread)  :
+                                 poc_trig_base_act    ? (poc_level + spread)            :
+                                 poc_trig_base_old    ? (poc_level[1] + spread)         :
+                                 (poc_level + spread)        
         //
         break_ask := scenario_break_out_ask
         target_res := market_buy_pattern == "Siffredi" ? top_liq : old_res
-        break_start_perc :=  (scenario_break_out_ask - bot) / ((top - bot) * 100)
+        break_start_perc :=  not na(scenario_break_out_ask) ? (scenario_break_out_ask - bot) / ((top - bot) * 100) : na
 
         label scenario_break = label.new(bar_index, low - (high - low), "scenario siffredi", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_break)
@@ -2633,10 +2646,16 @@ if barstate.islast and run > 0
     var float top_data_compression = na 
     var string pendant_trig = na 
 
-    if (market_buy_pattern == "Top Compression" or  market_buy_pattern[1] == "Top Compression")
-        scenario_val_to_higher := (val_trig and (val_is_in_buy or val_is_in_buy[1])) 
-    if market_buy_pattern == "Val" or  market_buy_pattern[1] == "Val"
-        scenario_val_to_higher := val_trig
+    if (market_buy_pattern == "Top Compression")
+        scenario_val_to_higher := val_trig_base_act 
+    if (market_buy_pattern[1] == "Top Compression")
+        scenario_val_to_higher := val_trig_base_old
+
+
+    if market_buy_pattern == "Val"
+        scenario_val_to_higher := val_trig_base_act
+    if market_buy_pattern[1] == "Val"
+        scenario_val_to_higher := val_trig_base_old
     if market_buy_pattern == "Bot Liq" or  market_buy_pattern[1] == "Bot Liq"
         scenario_val_to_higher := bot_liq_trig
         
@@ -2647,7 +2666,7 @@ if barstate.islast and run > 0
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_val_to_higher_line := 1
-        scenario_val_to_higher_ask  := market_buy_pattern == "Bot Liq" ? bot_liq + spread  : val_level + spread 
+        scenario_val_to_higher_ask  := bot_liq_trig ? bot_liq + spread  : val_trig_base_act ? val_level + spread : val_trig_base_old ? val_level[1] + spread : val_level
         mid_ask := scenario_val_to_higher_ask
         open_position_mid := 1
         //
@@ -2658,10 +2677,11 @@ if barstate.islast and run > 0
                 take_val_to_top := old_res_1
             else
                 top_data_compression := top
-        if market_buy_pattern == "Val"
+        if val_trig_base_act or val_trig_base_old
             pendant_trig := "Val"
         if market_buy_pattern == "Bot Liq"
             pendant_trig := "Bot Liq"
+            bot_liq_block := true 
         //
     //Metto na per chiudere prima la posizione al breakout
     if not na(take_val_to_top) and vah_level < vah_level[1]
@@ -2694,17 +2714,19 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
 
     bool scenario_poc_2_to_bot_target = false 
-    if market_buy_pattern == "Poc 2 Buy Fig" or market_buy_pattern[1] == "Poc 2 Buy Fig"
-        scenario_poc_2_to_bot_target := poc_2_trig and (poc_2_is_in_buy or poc_2_is_in_buy[1]) and open_position_mid == 0 and tot_position_scenario_bot == 0 
+    if market_buy_pattern       == "Poc 2 Buy Fig"
+        scenario_poc_2_to_bot_target := poc_2_trig_base_act 
+    if market_buy_pattern[1]    == "Poc 2 Buy Fig"
+        scenario_poc_2_to_bot_target := poc_2_trig_base_old
 
-    if scenario_poc_2_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
+    if scenario_poc_2_to_bot_target and open_position_mid == 0 and tot_position_scenario_bot == 0  //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_poc_2_to_bot_target_line := 1
-        scenario_poc_2_to_bot_target_ask  := poc_second_level + spread 
+        scenario_poc_2_to_bot_target_ask  := poc_2_trig_base_act ? poc_second_level + spread : poc_second_level[1] + spread
         mid_ask := scenario_poc_2_to_bot_target_ask
         open_position_mid := 1
         //
@@ -2731,17 +2753,20 @@ if barstate.islast and run > 0
 // Buy Poc position 
 // -----------------------------------------------------------{
     bool scenario_poc_to_bot_target = false 
-    if market_buy_pattern == "Poc Buy Fig" or market_buy_pattern[1] == "Poc Buy Fig"
-        scenario_poc_to_bot_target := poc_trig and (poc_is_in_buy or poc_is_in_buy[1]) and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
-    if scenario_poc_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
+    if market_buy_pattern       == "Poc Buy Fig" 
+        scenario_poc_to_bot_target := poc_trig_base_act 
+    if market_buy_pattern[1]    == "Poc Buy Fig" 
+        scenario_poc_to_bot_target := poc_trig_base_old
+
+    if scenario_poc_to_bot_target and open_position_mid == 0 and tot_position_scenario_bot == 0 //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_poc_to_bot_target_line := 1
-        scenario_poc_to_bot_target_ask  := poc_level + spread 
+        scenario_poc_to_bot_target_ask  := poc_trig_base_act ? poc_level + spread : poc_level[1] + spread 
         mid_ask := scenario_poc_to_bot_target_ask
         open_position_mid := 1
         //
@@ -2768,17 +2793,20 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
 
     bool scenario_val_to_bot_target = false 
-    if market_buy_pattern == "Val Buy Fig" or market_buy_pattern[1] == "Val Buy Fig"
-        scenario_val_to_bot_target := val_trig and (val_is_in_buy or val_is_in_buy[1])  and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
-    if scenario_val_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
+    if market_buy_pattern       == "Val Buy Fig"
+        scenario_val_to_bot_target := val_trig_base_act
+    if market_buy_pattern[1]    == "Val Buy Fig"
+        scenario_val_to_bot_target := val_trig_base_old
+
+    if scenario_val_to_bot_target and open_position_mid == 0 and tot_position_scenario_bot == 0 //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_val_to_bot_target_line := 1
-        scenario_val_to_bot_target_ask  := val_level + spread 
+        scenario_val_to_bot_target_ask  := val_trig_base_act ? val_level + spread : val_level[1] + spread
         mid_ask := scenario_val_to_bot_target_ask
         //
         open_position_mid := 1
@@ -2805,17 +2833,20 @@ if barstate.islast and run > 0
 // -----------------------------------------------------------{
 
     bool scenario_vah_to_bot_target = false 
-    if market_buy_pattern == "Vah Buy Fig" or market_buy_pattern[1] == "Vah Buy Fig"
-        scenario_vah_to_bot_target := vah_trig and (vah_is_in_buy or vah_is_in_buy[1])  and open_position_mid == 0 and tot_position_scenario_bot == 0 
 
-    if scenario_vah_to_bot_target //togliere la posizione quando le cover di sotto sono aperte
+    if market_buy_pattern       == "Vah Buy Fig"
+        scenario_vah_to_bot_target := vah_trig_base_act
+    if market_buy_pattern[1]    == "Vah Buy Fig"
+        scenario_vah_to_bot_target := vah_trig_base_old
+
+    if scenario_vah_to_bot_target and open_position_mid == 0 and tot_position_scenario_bot == 0 //togliere la posizione quando le cover di sotto sono aperte
         n_posizione := 12
         alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
          \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_vah_to_bot_target_line := 1
-        scenario_vah_to_bot_target_ask  := vah_level + spread 
+        scenario_vah_to_bot_target_ask  := vah_trig_base_act ? vah_level + spread : vah_level[1] + spread
         mid_ask := scenario_vah_to_bot_target_ask
         open_position_mid := 1
         //
@@ -2870,7 +2901,7 @@ if barstate.islast and run > 0
          str.tostring(timenow), "{", titolo, "BUY", n_titoli, "}", "}", "}"), alert.freq_once_per_bar)
         //
         scenario_actual_over_bot_line := 1
-        scenario_actual_over_bot_ask  := low + spread * 2
+        scenario_actual_over_bot_ask  := actual_supporto + spread * 2
         //
         label scenario_actual_over_bot_label = label.new(bar_index, low - (high - low), "scenario actual over bot", color=positiveColor,  style=label.style_label_up, textcolor=color.white, size=size.small, force_overlay = true)
         array.push(saved_labels, scenario_actual_over_bot_label)
@@ -2925,12 +2956,11 @@ if barstate.islast and run > 0
         if not na(old_sup_3)
             supporto_3 := old_sup_3
         //
-    scenario_bot_siffredi = market_buy_pattern == "Siffredi" and high > top_liq
 
     //Iterazioni quando bot_is_sup  
     if scenario_bot_line
         
-        if ((scenario_bot and scenario_bot_line_to_l == 0) or (scenario_bot_down and scenario_bot_line_to_l == 0)) and (scenario_actual_over_bot_line == 0 or (open_position_break + open_position_mid) == 1 and scenario_actual_over_bot_line == 1)
+        if (((scenario_bot and scenario_bot_line_to_l == 0) or (scenario_bot_down and scenario_bot_line_to_l == 0)) and (scenario_actual_over_bot_line == 0 or (open_position_break + open_position_mid) == 1 and scenario_actual_over_bot_line == 1)) and not bot_liq_block
             n_posizione := 1 
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\": {6}, \"data\": {7} 
              \"epic\": \"{8}\", \"direction\": \"{9}\", \"size\": {10} {11} {12} {13}", "{", "{", current_timeframe, "true", "OPEN", str.tostring(n_posizione), 
@@ -3028,7 +3058,7 @@ if barstate.islast and run > 0
             scenario_bot_line_to_l := 0
             scenario_bot_ask_to_l  := 0
         //
-        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_bot_trig) or (scenario_bot_siffredi) or (ema_switch_down and cover_2_line)) and high > scenario_bot_ask_to_h
+        if scenario_bot_line_to_h == 1 and scenario_bot_line_to_h[1] == 1 and ((higher_target_bot_trig) or (ema_switch_down and cover_2_line)) and high > scenario_bot_ask_to_h
             n_posizione := 2
             alert(str.format("{0} \"data\": {1} \"secret\": \"\", \"timeframe\": \"{2}\", \"real\": {3}, \"action\": \"{4}\", \"id\": \"{5}\", \"timenow\":{6}, 
              \"epic\": \"{7}\" {8} {9}", "{", "{", current_timeframe, "true", "CLOSE", str.tostring(n_posizione), str.tostring(timenow), titolo, "}", "}"), alert.freq_once_per_bar)
@@ -3075,7 +3105,7 @@ if barstate.islast and run > 0
         supporto_cover_trig_3 := not na(supporto_3[1]) and low[1] > supporto_3[1] and low <= supporto_3[1] and not cover_3_line and not cover_4_line
         supporto_cover_trig_4 := not na(supporto_4[1]) and low[1] > supporto_4[1] and low <= supporto_4[1] and not cover_4_line
     //
-
+    bot_liq_block := false 
 // -------------------------------------}
 
 //Posizione cover 1
@@ -3542,3 +3572,5 @@ table.cell(plotTable, 1, 2, str.tostring(n_titoli), text_color = color.white)
 table.cell(plotTable, 0, 3, "Dist. Cover", text_color = color.white, bgcolor = color.new(color.blue, 90))
 table.cell(plotTable, 1, 3, str.tostring(media_vol, "#.##"), text_color = color.white)
 //
+
+
