@@ -2279,16 +2279,16 @@ if run > 0
             if low_level == poc_second_level
                 start_perc                  := poc_2_perc
             if market_buy_pattern == "Pendant Study" and val_perc > 70
-                 and (na(break_start_perc) or (not na(break_start_perc)  and val_perc[1]  < (break_start_perc - (min_level[1] / 2))))
+                 and (na(break_start_perc) or (not na(break_start_perc)  and val_perc  < (break_start_perc - (min_level[1] / 2))))
                 market_buy_pattern          := "Top Compression"
             if market_buy_pattern == "Pendant Study" and vah_perc < 30
-                 and (na(break_start_perc) or (not na(break_start_perc) and vah_perc[1]   < (break_start_perc - (min_level[1] / 2))))
+                 and (na(break_start_perc) or (not na(break_start_perc) and vah_perc   < (break_start_perc - (min_level[1] / 2))))
                 market_buy_pattern          := "Bot Compression"
             if market_buy_pattern == "Pendant Study" and poc_is_in_buy
-                 and (na(break_start_perc) or (not na(break_start_perc) and poc_perc[1]   < (break_start_perc - (min_level[1] / 2))))
+                 and (na(break_start_perc) or (not na(break_start_perc) and poc_perc   < (break_start_perc - (min_level[1] / 2)))) and poc_perc < 50
                 market_buy_pattern          := "Poc"
             if market_buy_pattern == "Pendant Study" and val_is_in_buy
-                 and (na(break_start_perc) or (not na(break_start_perc) and val_perc[1]   < (break_start_perc - (min_level[1] / 2))))
+                 and (na(break_start_perc) or (not na(break_start_perc) and val_perc   < (break_start_perc - (min_level[1] / 2))))
                 market_buy_pattern          := "Val"
             if market_buy_pattern == "Pendant Study" and not val_is_in_buy and bot_liq_is_in_buy
                 market_buy_pattern          := "Bot Liq"
@@ -2296,6 +2296,7 @@ if run > 0
             market_buy_pattern              := "Siffredi" 
         if  market == "Switch Up Trend" and not trend_up and pearsonR_lr < 0.8 and pearsonR_lr >= 0.5
             market_buy_pattern              := "Siffredi look for break" 
+
 
 
 // -------------------------------------}
