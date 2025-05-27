@@ -10,18 +10,18 @@ indicator('Buy Bot Volume Indicator', max_bars_back = 5000,max_boxes_count=200, 
 //                                  ║                                                                                            ║
 //                                  ╚════════════════════════════════════════════════════════════════════════════════════════════╝
 
-//                                  ┌─────────────────────────────────────────────────────────────────────────────────────┐
-//                                  │  COPYRIGHT NOTICE - GNU GPL v3                                                      │
-//                                  │                                                                                     │
-//                                  │  Copyright (C) 2025 MPELAM Team                                                     │
-//                                  │  Email: manuelmarmaglio@gmail.com (Oggetto: TRADING)                                │
-//                                  │                                                                                     │
-//                                  │                                                                                     │
-//                                  │  Licenza: GNU General Public License v3+                                            │
-//                                  │  Redistribuzione: Consentita solo con attribuzione completa                         │
-//                                  │  Disclaimer: NESSUNA GARANZIA - USA A TUO RISCHIO E PERICOLO                        │
-//                                  │                                                                                     │          
-//                                  └─────────────────────────────────────────────────────────────────────────────────────┘
+//                                     ┌─────────────────────────────────────────────────────────────────────────────────────┐
+//                                     │  COPYRIGHT NOTICE - GNU GPL v3                                                      │
+//                                     │                                                                                     │
+//                                     │  Copyright (C) 2025 MPELAM Team                                                     │
+//                                     │  Email: manuelmarmaglio@gmail.com (Oggetto: TRADING)                                │
+//                                     │                                                                                     │
+//                                     │                                                                                     │
+//                                     │  Licenza: GNU General Public License v3+                                            │
+//                                     │  Redistribuzione: Consentita solo con attribuzione completa                         │
+//                                     │  Disclaimer: NESSUNA GARANZIA - USA A TUO RISCHIO E PERICOLO                        │
+//                                     │                                                                                     │          
+//                                     └─────────────────────────────────────────────────────────────────────────────────────┘
                         
 //                                  ⚙️ CONFIGURAZIONE SISTEMA:
 //                                  ⚠️  ATTENZIONE: BBars DEVE ESSERE NUMERO PARI - NON IMPROVVISARE! ⚠️
