@@ -24,7 +24,7 @@ indicator('Buy Bot Volume Indicator', max_bars_back = 5000,max_boxes_count=200, 
 //                                     └─────────────────────────────────────────────────────────────────────────────────────┘
                         
 //                                  ⚙️ CONFIGURAZIONE SISTEMA:
-//                                  ⚠️  ATTENZIONE: BBars DEVE ESSERE NUMERO PARI - NON IMPROVVISARE! ⚠️
+//                                  ⚠️  ATTENZIONE: BBars DEVE ESSERE NUMERO PARI
 
 
 // Starter Pack
